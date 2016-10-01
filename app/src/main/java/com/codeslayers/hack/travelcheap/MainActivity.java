@@ -7,6 +7,7 @@ import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.TextView;
 
 import com.google.android.gms.common.GooglePlayServicesNotAvailableException;
 import com.google.android.gms.common.GooglePlayServicesRepairableException;
@@ -15,19 +16,20 @@ import com.google.android.gms.location.places.Place;
 import com.google.android.gms.location.places.ui.PlaceAutocomplete;
 
 public class MainActivity extends AppCompatActivity {
+    
     int PLACE_AUTOCOMPLETE_REQUEST_CODE1 = 1;
     int PLACE_AUTOCOMPLETE_REQUEST_CODE2 = 2;
 
 
-    EditText e1,e2;
+    TextView e1,e2;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        e1=(EditText) findViewById(R.id.source);
-        e2=(EditText)findViewById(R.id.destination);
+        e1=(TextView) findViewById(R.id.source);
+        e2=(TextView)findViewById(R.id.destination);
 
         e1.setOnClickListener(new View.OnClickListener() {
             @Override
