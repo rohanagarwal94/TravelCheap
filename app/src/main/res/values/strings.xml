@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">TravelCheap</string>
+    <string name="source">Source</string>
+    <string name="destination">Destination</string>
 </resources>
