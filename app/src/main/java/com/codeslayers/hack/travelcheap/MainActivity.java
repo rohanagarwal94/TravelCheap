@@ -26,34 +26,38 @@ import android.widget.AutoCompleteTextView;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
+import android.widget.Toast;
 
-import com.google.android.gms.common.ConnectionResult;
+import com.android.volley.AuthFailureError;
+import com.android.volley.RequestQueue;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.JsonObjectRequest;
+import com.android.volley.toolbox.Volley;
 import com.google.android.gms.common.GooglePlayServicesNotAvailableException;
 import com.google.android.gms.common.GooglePlayServicesRepairableException;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.Status;
-import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.location.places.Place;
 import com.google.android.gms.location.places.ui.PlaceAutocomplete;
-import com.google.android.gms.maps.CameraUpdateFactory;
-import com.google.android.gms.maps.GoogleMap;
-import com.google.android.gms.maps.OnMapReadyCallback;
-import com.google.android.gms.maps.SupportMapFragment;
-import com.google.android.gms.maps.model.BitmapDescriptorFactory;
-import com.google.android.gms.maps.model.CameraPosition;
-import com.google.android.gms.maps.model.IndoorBuilding;
-import com.google.android.gms.maps.model.IndoorLevel;
-import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.Marker;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
 public class MainActivity extends AppCompatActivity implements OnMapReadyCallback {
 
     int PLACE_AUTOCOMPLETE_REQUEST_CODE1 = 1;
     int PLACE_AUTOCOMPLETE_REQUEST_CODE2 = 2;
 
+    private RequestQueue requestQueue;
+    private String url,uberUrl;
+    private ArrayList<Route> routes;
+    private Route autoRoute;
 
     private TextView e1, e2;
     private GoogleMap mMap;
@@ -127,7 +131,22 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             }
         });
 
+        routes=new ArrayList<>();
+        autoRoute=new Route();
+        url="https://maps.googleapis.com/maps/api/directions/json?origin=preetvihar&destination=dwarka&mode=transit&transit_mode=rail&key=AIzaSyDuZ2e5qarM-fhwOoAS4WNum1k1Ow2lhLs";
+        getRoute();
+        url="https://maps.googleapis.com/maps/api/directions/json?origin=preetvihar&destination=dwarka&mode=transit&transit_mode=bus&key=AIzaSyDuZ2e5qarM-fhwOoAS4WNum1k1Ow2lhLs";
+        getRoute();
+        routes.add(autoRoute);
 
+        Route uberRoute=new Route();
+        uberRoute.setStartAddress(autoRoute.getStartAddress());
+        uberRoute.setEndAddress(autoRoute.getEndAddress());
+        double startLatitude=28.6374378;
+        double startLongitude=77.2927347;
+        double endLatitude=28.5921452;
+        double endLongitude=77.0460772;
+        getUberRouteAndFare(uberRoute,startLatitude,startLongitude, endLatitude, endLongitude);
     }
 
     @Override
