@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<com.sothree.slidinguppanel.SlidingUpPanelLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:gravity="bottom">
+    tools:context="com.codeslayers.hack.travelcheap.MainActivity">
 
     <FrameLayout
         android:layout_width="match_parent"
@@ -20,8 +20,8 @@
             android:layout_alignParentTop="true"
             android:layout_centerHorizontal="true"
             android:padding="5dp"
-            android:layout_marginLeft="45dp"
-            android:layout_marginRight="45dp"
+            android:layout_marginLeft="55dp"
+            android:layout_marginRight="55dp"
             android:layout_marginTop="15dp"
             android:textAlignment="center"
             android:background="@android:color/background_light"
@@ -36,10 +36,10 @@
             android:id="@+id/destination"
             android:textAlignment="center"
             android:layout_marginTop="62dp"
-            android:layout_marginLeft="45dp"
-            android:layout_marginRight="45dp"
+            android:layout_marginLeft="55dp"
+            android:layout_marginRight="55dp"
             android:padding="5dp"
             android:background="@android:color/background_light"
             />
     </FrameLayout>
-</com.sothree.slidinguppanel.SlidingUpPanelLayout>
+</RelativeLayout>
