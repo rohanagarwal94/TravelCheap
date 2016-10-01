@@ -82,19 +82,19 @@ public class MainActivity extends AppCompatActivity {
 
         routes=new ArrayList<>();
         autoRoute=new Route();
-        url="https://maps.googleapis.com/maps/api/directions/json?origin=shahdara&destination=preet%20vihar&mode=transit&transit_mode=bus&key=AIzaSyDuZ2e5qarM-fhwOoAS4WNum1k1Ow2lhLs";
+        url="https://maps.googleapis.com/maps/api/directions/json?origin=preetvihar&destination=dwarka&mode=transit&transit_mode=rail&key=AIzaSyDuZ2e5qarM-fhwOoAS4WNum1k1Ow2lhLs";
         getRoute();
-        url="https://maps.googleapis.com/maps/api/directions/json?origin=shahdara&destination=preet%20vihar&mode=transit&transit_mode=rail&key=AIzaSyDuZ2e5qarM-fhwOoAS4WNum1k1Ow2lhLs";
+        url="https://maps.googleapis.com/maps/api/directions/json?origin=preetvihar&destination=dwarka&mode=transit&transit_mode=bus&key=AIzaSyDuZ2e5qarM-fhwOoAS4WNum1k1Ow2lhLs";
         getRoute();
         routes.add(autoRoute);
 
         Route uberRoute=new Route();
         uberRoute.setStartAddress(autoRoute.getStartAddress());
         uberRoute.setEndAddress(autoRoute.getEndAddress());
-        double startLatitude=37.7759792;
-        double startLongitude=-122.41823;
-        double endLatitude=0;
-        double endLongitude=0;
+        double startLatitude=28.6374378;
+        double startLongitude=77.2927347;
+        double endLatitude=28.5921452;
+        double endLongitude=77.0460772;
         getUberRouteAndFare(uberRoute,startLatitude,startLongitude, endLatitude, endLongitude);
     }
 
@@ -137,8 +137,6 @@ public class MainActivity extends AppCompatActivity {
                             for(int j=0;j<steps.length();j++){
                                 JSONObject jsonObject1 = steps.getJSONObject(j);
                                 String travelMode=jsonObject1.getString("travel_mode");
-                                System.out.println(travelMode);
-
                                 JSONObject duration1=jsonObject1.getJSONObject("duration");
                                 JSONObject distance1 = jsonObject1.getJSONObject("distance");
                                 int durationValue1=duration1.getInt("value");
@@ -158,17 +156,25 @@ public class MainActivity extends AppCompatActivity {
                                     departureName = departureStop.getString("name");
                                     if(type.equals("BUS")) {
                                         stepFare = getBusFare(distanceValue1);
-                                        type="Bus "+line.getString("short_name");
+                                        try {
+                                            type = "Bus " + line.getString("short_name");
+                                        }catch (JSONException e){
+                                            type="Bus " + line.getString("name");
+                                        }
                                     }
                                     else if(type.equals("SUBWAY")) {
                                         stepFare = getMetroFare(arrivalName,departureName);
-                                        type="Metro "+line.getString("short_name");
+                                        try {
+                                            type = "Metro " + line.getString("short_name");
+                                        }catch (JSONException e){
+                                            type="Metro " + line.getString("name");
+                                        }
                                     }
                                 }
                                 routeFare=routeFare+stepFare;
                                 Step step=new Step(departureName,arrivalName,type,durationValue1,distanceValue1,stepFare);
                                 route.addStep(step);
-                                System.out.println(departureName+" to "+arrivalName+" via "+type+" price"+routeFare);
+                                System.out.println(departureName+" to "+arrivalName+" via "+type+" price"+stepFare);
                             }
                             route.setFare(routeFare);
                             routes.add(route);
@@ -198,10 +204,10 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
-    public void getUberRouteAndFare(final Route route, double startLatitude, double startLongitude, double endLatitude, double endLongitude){
+    public void getUberRouteAndFare(final Route route, double startLatitude, double startLongitude, double endLatitude, double endLongitude) {
         requestQueue = Volley.newRequestQueue(MainActivity.this);
         uberUrl="https://api.uber.com/v1/estimates/price?start_latitude="+startLatitude+"&start_longitude="+startLongitude+"&end_latitude="+endLatitude+"&end_longitude="+endLongitude;
-        JsonObjectRequest jor = new JsonObjectRequest(url, null,
+        JsonObjectRequest jor = new JsonObjectRequest(uberUrl, null,
                 new Response.Listener<JSONObject>() {
                     @Override
                     public void onResponse(JSONObject response) {
@@ -224,6 +230,7 @@ public class MainActivity extends AppCompatActivity {
                             route.setDuration(price.getInt("duration"));
                             route.setDistance(price.getInt("distance")*100);
                             route.setFare((price.getInt("high_estimate")+price.getInt("low_estimate"))/2);
+                            System.out.println((price.getInt("high_estimate")+price.getInt("low_estimate"))/2);
                             routes.add(route);
 
                         }catch(JSONException e){e.printStackTrace();}
