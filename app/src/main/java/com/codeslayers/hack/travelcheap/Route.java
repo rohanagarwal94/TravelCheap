@@ -1,12 +1,13 @@
 package com.codeslayers.hack.travelcheap;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 
 /**
  * Created by lenovo on 01/10/2016.
  */
 
-public class Route {
+public class Route implements Serializable{
     private ArrayList<Step> steps;
     private String startAddress;
     private String endAddress;

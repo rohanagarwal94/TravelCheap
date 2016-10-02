@@ -6,7 +6,7 @@
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
     <uses-feature android:name="android.hardware.location.gps" />
-
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
 
     <application
         android:allowBackup="true"
@@ -14,6 +14,10 @@
         android:label="@string/app_name"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
+
+        -keepclassmembers class com.paytm.pgsdk.PaytmWebView$PaytmJavaScriptInterface {
+            public *;
+        }
 
         <meta-data
             android:name="com.google.android.gms.version"
@@ -31,6 +35,11 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity android:name=".FareListActivity"></activity>
+        <activity android:name=".MerchantActivity"></activity>
+        <activity android:name="com.paytm.pgsdk.PaytmPGActiviy"
+            android:screenOrientation="portrait" android:configChanges="keyboardHidden|orientation|keyboard"/>
+
     </application>
 
 </manifest>

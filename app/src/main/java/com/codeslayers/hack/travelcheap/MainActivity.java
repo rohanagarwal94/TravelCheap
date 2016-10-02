@@ -1,31 +1,15 @@
 package com.codeslayers.hack.travelcheap;
 
 import android.Manifest;
-import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.location.LocationManager;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
-import android.support.v4.app.ActivityCompat;
-import android.support.v4.app.Fragment;
-import android.content.res.AssetManager;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v4.app.ActivityCompat;
+import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
-import android.view.LayoutInflater;
-import android.view.Menu;
-import android.view.MenuInflater;
-import android.view.MenuItem;
 import android.view.View;
-import android.view.ViewGroup;
-import android.view.inputmethod.InputMethodManager;
-import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
-import android.widget.AutoCompleteTextView;
-import android.widget.Button;
-import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -255,6 +239,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                             route.setFare(routeFare);
                             route.setMode(mode);
                             routes.add(route);
+                            Intent i = new Intent(getBaseContext(), FareListActivity.class);
+                            i.putExtra("key", routes.get(1));
+                            startActivity(i);
                             System.out.println("route fare "+routeFare);
                         }catch(JSONException e){e.printStackTrace();}
                     }
@@ -278,7 +265,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         };
         requestQueue.add(jor);
-
     }
 
     @Override
