@@ -63,7 +63,7 @@
     <LinearLayout
         android:id="@+id/sliding_view"
         android:layout_width="match_parent"
-        android:layout_height="50dp"
+        at="50dp"
         android:layout_gravity="bottom"
         android:background="@color/BurlyWood"
         android:orientation="horizontal">
