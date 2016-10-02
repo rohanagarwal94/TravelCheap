@@ -22,12 +22,12 @@ android {
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
     testCompile 'junit:junit:4.12'
+    compile files('libs/volley.jar')
     compile 'com.android.support:appcompat-v7:24.2.0'
     compile 'com.google.android.gms:play-services-nearby:9.6.1'
     compile 'com.google.android.gms:play-services-places:9.6.1'
     compile 'com.google.android.gms:play-services-maps:9.6.1'
     compile 'com.google.android.gms:play-services-location:9.6.1'
-    compile 'com.google.android.gms:play-services-contextmanager:9.6.1'
     compile 'com.google.android.gms:play-services-appindexing:9.6.1'
     compile 'com.google.android.gms:play-services-auth:9.6.1'
     compile 'com.google.android.gms:play-services-appinvite:9.6.1'
