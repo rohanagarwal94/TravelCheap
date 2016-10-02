@@ -80,6 +80,11 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     private PolylineOptions lineOptions;
     private Marker m1, m2;
 
+    private Marker m1,m2;
+    double startLatitude=28.6374378;
+    double startLongitude=77.2927347;
+    double endLatitude=28.5921452;
+    double endLongitude=77.0460772;
     private TextView e1, e2;
     private GoogleMap mMap;
     private GoogleApiClient mGoogleApiClient;
@@ -87,7 +92,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     private Polyline polyline;
     private LocationManager locationManager;
     private static final int REQUEST_CALL_LOCATION = 100;
-
+    private String initial, ending;
+    boolean flag=false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -142,33 +148,149 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             }
         });
 
-        routes = new ArrayList<>();
-        autoRoute = new Route();
-        String source = "preet vihar";
-        String destination = "rithala";
-
-        url = "https://maps.googleapis.com/maps/api/directions/json?origin=preetvihar&destination=rithala&mode=transit&transit_mode=rail&key=AIzaSyDuZ2e5qarM-fhwOoAS4WNum1k1Ow2lhLs";
-        getRoute();
-        url = "https://maps.googleapis.com/maps/api/directions/json?origin=preetvihar&destination=rithala&mode=transit&transit_mode=bus&key=AIzaSyDuZ2e5qarM-fhwOoAS4WNum1k1Ow2lhLs";
-        getRoute();
-        routes.add(autoRoute);
-
-        Route uberRoute = new Route();
-        uberRoute.setStartAddress(autoRoute.getStartAddress());
-        uberRoute.setEndAddress(autoRoute.getEndAddress());
-        double startLatitude = 28.6374378;
-        double startLongitude = 77.2927347;
-        double endLatitude = 28.5921452;
-        double endLongitude = 77.0460772;
-        getUberRouteAndFare(uberRoute, startLatitude, startLongitude, endLatitude, endLongitude);
+        routes=new ArrayList<>();
+        autoRoute=new Route();
+//        String source = "preet vihar";
+//        String destination="rithala";
+//
+//        url="https://maps.googleapis.com/maps/api/directions/json?origin=preetvihar&destination=rithala&mode=transit&transit_mode=rail&key=AIzaSyDuZ2e5qarM-fhwOoAS4WNum1k1Ow2lhLs";
+//        getRoute();
+//        url="https://maps.googleapis.com/maps/api/directions/json?origin=preetvihar&destination=rithala&mode=transit&transit_mode=bus&key=AIzaSyDuZ2e5qarM-fhwOoAS4WNum1k1Ow2lhLs";
+//        getRoute();
+//        routes.add(autoRoute);
+//
+//        Route uberRoute=new Route();
+//        uberRoute.setStartAddress(autoRoute.getStartAddress());
+//        uberRoute.setEndAddress(autoRoute.getEndAddress());
+//        double startLatitude=28.6374378;
+//        double startLongitude=77.2927347;
+//        double endLatitude=28.5921452;
+//        double endLongitude=77.0460772;
+//        getUberRouteAndFare(uberRoute,startLatitude,startLongitude, endLatitude, endLongitude);
     }
 
+    public void getRoute(final String mode){
+        requestQueue = Volley.newRequestQueue(MainActivity.this);
+
+        JsonObjectRequest jor = new JsonObjectRequest(url, null,
+                new Response.Listener<JSONObject>() {
+                    @Override
+                    public void onResponse(JSONObject response) {
+                        try{
+                            System.out.println(response.toString());
+                            JSONArray routesArray = response.getJSONArray("routes");
+                            System.out.println(routesArray.length());
+                            if(routesArray.length()==0)
+                                return;
+                            JSONObject routeObject=routesArray.getJSONObject(0);
+                            JSONArray legs = routeObject.getJSONArray("legs");
+                            System.out.println("legs "+legs.length());
+                            Route route=new Route();
+                            JSONObject jsonObject = legs.getJSONObject(0);
+                            String startAddress=jsonObject.getString("start_address");
+                            String endAddress=jsonObject.getString("end_address");
+                            System.out.println("Route from "+startAddress+" to "+endAddress);
+                            JSONObject duration=jsonObject.getJSONObject("duration");
+                            JSONObject distance = jsonObject.getJSONObject("distance");
+                            int durationValue=duration.getInt("value");
+                            int distanceValue=distance.getInt("value");
+                            autoRoute.setFare(getAutoFare(distanceValue));
+                            autoRoute.setEndAddress(endAddress);
+                            autoRoute.setStartAddress(startAddress);
+                            autoRoute.setDuration(durationValue);
+                            autoRoute.setDistance(distanceValue);
+                            route.setDistance(distanceValue);
+                            route.setDuration(durationValue);
+                            route.setEndAddress(startAddress);
+                            route.setEndAddress(endAddress);
+                            float routeFare=0;
+                            JSONArray steps = jsonObject.getJSONArray("steps");
+
+                            for(int j=0;j<steps.length();j++){
+                                JSONObject jsonObject1 = steps.getJSONObject(j);
+                                String travelMode=jsonObject1.getString("travel_mode");
+                                JSONObject duration1=jsonObject1.getJSONObject("duration");
+                                JSONObject distance1 = jsonObject1.getJSONObject("distance");
+                                int durationValue1=duration1.getInt("value");
+                                int distanceValue1=distance1.getInt("value");
+                                float stepFare=0;
+                                String type="Walking";
+                                String arrivalName="";
+                                String departureName="";
+                                if(travelMode.equals("WALKING")!=true) {
+                                    JSONObject transitDetails=jsonObject1.getJSONObject("transit_details");
+                                    JSONObject line=transitDetails.getJSONObject("line");
+                                    JSONObject vehicle=line.getJSONObject("vehicle");
+                                    type=vehicle.getString("type");
+                                    JSONObject arrivalStop = transitDetails.getJSONObject("arrival_stop");
+                                    JSONObject departureStop = transitDetails.getJSONObject("departure_stop");
+                                    arrivalName = arrivalStop.getString("name");
+                                    departureName = departureStop.getString("name");
+                                    if(type.equals("BUS")) {
+                                        stepFare = getBusFare(distanceValue1);
+                                        try {
+                                            type = "Bus " + line.getString("short_name");
+                                        }catch (JSONException e){
+                                            type="Bus " + line.getString("name");
+                                        }
+                                    }
+                                    else if(type.equals("SUBWAY")) {
+                                        try {
+                                            type = "Metro " + line.getString("short_name");
+                                        }catch (JSONException e){
+                                            type="Metro " + line.getString("name");
+                                        }
+                                    }
+                                }
+                                routeFare=routeFare+stepFare;
+                                Step step=new Step(departureName,arrivalName,type,durationValue1,distanceValue1,stepFare);
+                                route.addStep(step);
+                                System.out.println(departureName+" to "+arrivalName+" via "+type+" price "+stepFare);
+                            }
+                            if(mode.equals("metro")){
+                                routeFare=routeFare + getMetroFare(route.getSteps());
+                                System.out.println("Route from "+startAddress+" to "+endAddress);
+                            }
+                            route.setFare(routeFare);
+                            route.setMode(mode);
+                            routes.add(route);
+                            Intent i = new Intent(getBaseContext(), FareListActivity.class);
+                            i.putExtra("key", routes.get(1));
+                            startActivity(i);
+                            System.out.println("route fare "+routeFare);
+                        }catch(JSONException e){e.printStackTrace();}
+                    }
+                },
+                new Response.ErrorListener() {
+                    @Override
+                    public void onErrorResponse(VolleyError error) {
+                        //progressDialog.dismiss();
+                        Toast.makeText(getApplicationContext(),"Error in internet connection.",Toast.LENGTH_LONG).show();
+                        Log.e("Volley",error.toString());
+
+                    }
+                }
+        ){
+            @Override
+            public Map<String, String> getHeaders() throws AuthFailureError {
+                HashMap<String, String> headers = new HashMap<String, String>();
+                System.out.println("here it is");
+                return headers;
+            }
+
+        };
+        requestQueue.add(jor);
+    }
 
     @Override
     public void onMapReady(GoogleMap map) {
         if (map != null) {
             mMap = map;
-            setUpMap();
+//            locationManager = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
+//            Location mLastLocation = getLastKnownLocation();
+//            if(latLng!=null)
+//                latLng = new LatLng(mLastLocation.getLatitude(), mLastLocation.getLongitude());
+            initCamera(new LatLng(28.591407,77.318911));
         }
     }
 
@@ -204,21 +326,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
 
 
-    private void setUpMap() {
-
-//        int permission = ActivityCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.ACCESS_FINE_LOCATION);
-//        if (permission != PackageManager.PERMISSION_GRANTED) {
-//            ActivityCompat.requestPermissions(
-//                    MainActivity.this,
-//                    new String[]{Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION},
-//                    REQUEST_CALL_LOCATION);
-//        }
-//        Location mCurrentLocation = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
-//        initCamera(new LatLng(mCurrentLocation.getLatitude(),mCurrentLocation.getLongitude()));
-        initCamera(new LatLng(28.5909765,77.3187686));
-
-    }
-
 
     public void getUberRouteAndFare(final Route route, double startLatitude, double startLongitude, double endLatitude, double endLongitude) {
         requestQueue = Volley.newRequestQueue(MainActivity.this);
@@ -246,6 +353,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                             route.setDuration(price.getInt("duration"));
                             route.setDistance(price.getInt("distance")*100);
                             route.setFare((price.getInt("high_estimate")+price.getInt("low_estimate"))/2);
+                            route.setMode("uber");
                             System.out.println((price.getInt("high_estimate")+price.getInt("low_estimate"))/2);
                             routes.add(route);
 
@@ -274,10 +382,35 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     }
 
-    private float getMetroFare(String arrivalName, String departureName) {
+    private float getMetroFare(ArrayList<Step> steps) {
+
+        String arrivalName="";
+        String departureName="";
+        System.out.println("size of metro steps "+steps.size());
+        int i=0;
+        for(;i<steps.size();i++){
+            if(steps.get(i).getMode().contains("Metro")) {
+                arrivalName = steps.get(i).getSource();
+                System.out.println(arrivalName+"here");
+                break;
+            }
+        }
+
+        for(i=steps.size()-1;i>=0;i--) {
+            if (steps.get(i).getMode().contains("Metro")) {
+                departureName = steps.get(i).getDestination();
+                System.out.println(departureName+"there");
+                break;
+            }
+        }
+
+        if(arrivalName.equals("")||departureName.equals(""))
+            return 0;
         float fare=0;
         String json = null;
         int arrivalId=0,deparureId=0;
+        arrivalName=arrivalName.replace("Metro Station","").trim();
+        departureName=departureName.replace("Metro Station","").trim();
         boolean arrivalFlag=false,departureFlag=false;
         try {
             InputStream is = this.getAssets().open("metro.json");
@@ -293,23 +426,25 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         try {
             JSONObject obj = new JSONObject(json);
             JSONArray metroArray = obj.getJSONArray("metro");
+            System.out.println(arrivalName+" "+departureName);
             JSONObject jsonObject=metroArray.getJSONObject(0);
-            for(int i=1;i<=jsonObject.length();i++){
-                if(arrivalName.equalsIgnoreCase(jsonObject.getString(""+i))) {
-                    arrivalId = i;
+            for(int j=1;j<metroArray.length();j++){
+                if(arrivalName.equalsIgnoreCase(jsonObject.getString(""+j))) {
+                    arrivalId = j;
                     arrivalFlag=true;
                 }
-                if(departureName.equalsIgnoreCase(jsonObject.getString(""+i))) {
-                    deparureId = i;
+                if(departureName.equalsIgnoreCase(jsonObject.getString(""+j))) {
+                    deparureId = j;
                     departureFlag=true;
                 }
-                if(arrivalFlag==true&&departureFlag==true)
+                if(arrivalFlag&&departureFlag)
                     break;
             }
             if(deparureId==0||arrivalId==0)
                 return fare;
             JSONObject fareObject=metroArray.getJSONObject(deparureId);
             fare=fareObject.getInt(""+arrivalId);
+            System.out.println(fare);
         } catch (JSONException e) {
             e.printStackTrace();
             return fare;
@@ -329,122 +464,15 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         return fare;
     }
 
-
-    public void getRoute() {
-        requestQueue = Volley.newRequestQueue(MainActivity.this);
-
-        JsonObjectRequest jor = new JsonObjectRequest(url, null,
-                new Response.Listener<JSONObject>() {
-                    @Override
-                    public void onResponse(JSONObject response) {
-                        try {
-                            System.out.println(response.toString());
-                            JSONArray routesArray = response.getJSONArray("routes");
-                            System.out.println(routesArray.length());
-                            if (routesArray.length() == 0)
-                                return;
-                            JSONObject routeObject = routesArray.getJSONObject(0);
-                            JSONArray legs = routeObject.getJSONArray("legs");
-                            System.out.println("legs " + legs.length());
-                            Route route = new Route();
-                            JSONObject jsonObject = legs.getJSONObject(0);
-                            String startAddress = jsonObject.getString("start_address");
-                            String endAddress = jsonObject.getString("end_address");
-                            JSONObject duration = jsonObject.getJSONObject("duration");
-                            JSONObject distance = jsonObject.getJSONObject("distance");
-                            int durationValue = duration.getInt("value");
-                            int distanceValue = distance.getInt("value");
-                            autoRoute.setFare(getAutoFare(distanceValue));
-                            autoRoute.setEndAddress(endAddress);
-                            autoRoute.setStartAddress(startAddress);
-                            autoRoute.setDuration(durationValue);
-                            autoRoute.setDistance(distanceValue);
-                            route.setDistance(distanceValue);
-                            route.setDuration(durationValue);
-                            route.setEndAddress(startAddress);
-                            route.setEndAddress(endAddress);
-                            float routeFare = 0;
-                            JSONArray steps = jsonObject.getJSONArray("steps");
-
-                            for (int j = 0; j < steps.length(); j++) {
-                                JSONObject jsonObject1 = steps.getJSONObject(j);
-                                String travelMode = jsonObject1.getString("travel_mode");
-                                JSONObject duration1 = jsonObject1.getJSONObject("duration");
-                                JSONObject distance1 = jsonObject1.getJSONObject("distance");
-                                int durationValue1 = duration1.getInt("value");
-                                int distanceValue1 = distance1.getInt("value");
-                                float stepFare = 0;
-                                String type = "Walking";
-                                String arrivalName = "";
-                                String departureName = "";
-                                if (travelMode.equals("WALKING") != true) {
-                                    JSONObject transitDetails = jsonObject1.getJSONObject("transit_details");
-                                    JSONObject line = transitDetails.getJSONObject("line");
-                                    JSONObject vehicle = line.getJSONObject("vehicle");
-                                    type = vehicle.getString("type");
-                                    JSONObject arrivalStop = transitDetails.getJSONObject("arrival_stop");
-                                    JSONObject departureStop = transitDetails.getJSONObject("departure_stop");
-                                    arrivalName = arrivalStop.getString("name");
-                                    departureName = departureStop.getString("name");
-                                    if (type.equals("BUS")) {
-                                        stepFare = getBusFare(distanceValue1);
-                                        try {
-                                            type = "Bus " + line.getString("short_name");
-                                        } catch (JSONException e) {
-                                            type = "Bus " + line.getString("name");
-                                        }
-                                    } else if (type.equals("SUBWAY")) {
-                                        stepFare = getMetroFare(arrivalName, departureName);
-                                        try {
-                                            type = "Metro " + line.getString("short_name");
-                                        } catch (JSONException e) {
-                                            type = "Metro " + line.getString("name");
-                                        }
-                                    }
-                                }
-                                routeFare = routeFare + stepFare;
-                                Step step = new Step(departureName, arrivalName, type, durationValue1, distanceValue1, stepFare);
-                                route.addStep(step);
-                                System.out.println(departureName + " to " + arrivalName + " via " + type + " price" + stepFare);
-                            }
-                            route.setFare(routeFare);
-                            routes.add(route);
-                            System.out.println("route fare " + routeFare);
-                        } catch (JSONException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                },
-                new Response.ErrorListener() {
-                    @Override
-                    public void onErrorResponse(VolleyError error) {
-                        //progressDialog.dismiss();
-                        Toast.makeText(getApplicationContext(), "Error in internet connection.", Toast.LENGTH_LONG).show();
-                        Log.e("Volley", error.toString());
-
-                    }
-                }
-        ) {
-            @Override
-            public Map<String, String> getHeaders() throws AuthFailureError {
-                HashMap<String, String> headers = new HashMap<String, String>();
-                System.out.println("here it is");
-                return headers;
-            }
-
-        };
-        requestQueue.add(jor);
-
-    }
-
     private float getAutoFare(int distance){
         float fare=25;
+        distance=distance/1000;
         if(distance-2>0){
             fare =fare+8*(distance-2);
         }
+        System.out.println("auto "+fare);
         return fare;
     }
-
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
@@ -452,6 +480,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             if (resultCode == RESULT_OK) {
                 Place place = PlaceAutocomplete.getPlace(this, data);
                 e1.setText(place.getName());
+                startLatitude=place.getLatLng().latitude;
+                startLongitude=place.getLatLng().longitude;
                 initCamera(place.getLatLng());
                 if(m1!=null || m2!=null)
                 {
@@ -474,6 +504,10 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             if (resultCode == RESULT_OK) {
                 Place place = PlaceAutocomplete.getPlace(this, data);
                 e2.setText(place.getName());
+                endLatitude=place.getLatLng().latitude;
+                endLongitude=place.getLatLng().longitude;
+                callApis(e1.getText().toString().replace(" ",""),e2.getText().toString().replace(" ",""));
+
                 //zoom out the map
                 if(m2!=null)
                     m2.remove();
@@ -486,17 +520,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                     builder.include(m2.getPosition());
 
                 LatLngBounds bounds = builder.build();
-                if(polyline!=null)
-                    polyline.remove();
 
                 CameraUpdate cu = CameraUpdateFactory.newLatLngBounds(bounds, 90);
                 mMap.moveCamera(cu);
-                lineOptions.add(m1.getPosition());
-                lineOptions.add(m2.getPosition());
-                lineOptions.width(2);
-                lineOptions.color(Color.RED);
-                polyline= mMap.addPolyline(lineOptions);
-
 
                 Log.i("Place name", "Place: " + place.getName());
             } else if (resultCode == PlaceAutocomplete.RESULT_ERROR) {

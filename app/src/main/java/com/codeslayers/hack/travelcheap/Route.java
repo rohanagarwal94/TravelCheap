@@ -1,18 +1,29 @@
 package com.codeslayers.hack.travelcheap;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 
 /**
  * Created by lenovo on 01/10/2016.
  */
 
-public class Route {
+public class Route implements Serializable{
     private ArrayList<Step> steps;
     private String startAddress;
     private String endAddress;
     private int duration;
     private int distance;
     private float fare;
+
+    public String getMode() {
+        return mode;
+    }
+
+    public void setMode(String mode) {
+        this.mode = mode;
+    }
+
+    private String mode;
 
     public float getFare() {
         return fare;
