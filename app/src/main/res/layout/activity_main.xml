@@ -8,75 +8,73 @@
     android:gravity="bottom"
     android:id="@+id/sliding_layout">
 
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    tools:context="com.codeslayers.hack.travelcheap.MainActivity">
-
-    <FrameLayout
+    <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:tools="http://schemas.android.com/tools"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:orientation="vertical">
-        <fragment android:id="@+id/map" android:name="com.google.android.gms.maps.SupportMapFragment" android:layout_width="match_parent" android:layout_height="match_parent"/>
+        tools:context="com.codeslayers.hack.travelcheap.MainActivity">
 
-        <TextView
+        <FrameLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:textAppearance="?android:attr/textAppearanceLarge"
-            android:hint="@string/source"
-            android:id="@+id/source"
-            android:layout_alignParentTop="true"
-            android:layout_centerHorizontal="true"
-            android:padding="5dp"
-            android:layout_marginLeft="55dp"
-            android:layout_marginRight="55dp"
-            android:layout_marginTop="15dp"
-            android:textAlignment="center"
-            android:background="@android:color/background_light"
+            android:layout_height="match_parent"
+            android:orientation="vertical">
+            <fragment android:id="@+id/map" android:name="com.google.android.gms.maps.SupportMapFragment" android:layout_width="match_parent" android:layout_height="match_parent"/>
 
-            />
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textAppearance="?android:attr/textAppearanceLarge"
+                android:hint="@string/source"
+                android:id="@+id/source"
+                android:layout_alignParentTop="true"
+                android:layout_centerHorizontal="true"
+                android:padding="5dp"
+                android:layout_marginLeft="55dp"
+                android:layout_marginRight="55dp"
+                android:layout_marginTop="15dp"
+                android:textAlignment="center"
+                android:background="@android:color/background_light"
 
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:textAppearance="?android:attr/textAppearanceLarge"
-            android:hint="@string/destination"
-            android:id="@+id/destination"
-            android:textAlignment="center"
-            android:layout_marginTop="62dp"
-            android:layout_marginLeft="55dp"
-            android:layout_marginRight="55dp"
-            android:padding="5dp"
-            android:background="@android:color/background_light"
-            />
+                />
 
-    </FrameLayout>
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textAppearance="?android:attr/textAppearanceLarge"
+                android:hint="@string/destination"
+                android:id="@+id/destination"
+                android:textAlignment="center"
+                android:layout_marginTop="62dp"
+                android:layout_marginLeft="55dp"
+                android:layout_marginRight="55dp"
+                android:padding="5dp"
+                android:background="@android:color/background_light"
+                />
+
+        </FrameLayout>
 
 
-</RelativeLayout>
+    </RelativeLayout>
     <!-- Sliding view -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:orientation="vertical">
 
-    <LinearLayout
-        android:id="@+id/sliding_view"
-        android:layout_width="match_parent"
-        at="50dp"
-        android:layout_gravity="bottom"
-        android:background="@color/BurlyWood"
-        android:orientation="horizontal">
-    </LinearLayout>
-    <RelativeLayout
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:background="@color/aqua"
-        >
+        <LinearLayout
+            android:id="@+id/sliding_view"
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:layout_gravity="bottom"
+            android:background="@color/BurlyWood"
+            android:orientation="horizontal">
+        </LinearLayout>
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@color/aqua">
 
-    </RelativeLayout>
+        </RelativeLayout>
 
     </LinearLayout>
 </com.sothree.slidinguppanel.SlidingUpPanelLayout>
-
