@@ -74,14 +74,18 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     private ArrayList<Route> routes;
     private Route autoRoute;
     private Marker m1,m2;
-
+    double startLatitude=28.6374378;
+    double startLongitude=77.2927347;
+    double endLatitude=28.5921452;
+    double endLongitude=77.0460772;
     private TextView e1, e2;
     private GoogleMap mMap;
     private GoogleApiClient mGoogleApiClient;
     private LatLng latLng;
     private LocationManager locationManager;
     private static final int REQUEST_CALL_LOCATION = 100;
-
+    private String initial, ending;
+    boolean flag=false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -147,26 +151,26 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         routes=new ArrayList<>();
         autoRoute=new Route();
-        String source = "preet vihar";
-        String destination="rithala";
-
-        url="https://maps.googleapis.com/maps/api/directions/json?origin=preetvihar&destination=rithala&mode=transit&transit_mode=rail&key=AIzaSyDuZ2e5qarM-fhwOoAS4WNum1k1Ow2lhLs";
-        getRoute();
-        url="https://maps.googleapis.com/maps/api/directions/json?origin=preetvihar&destination=rithala&mode=transit&transit_mode=bus&key=AIzaSyDuZ2e5qarM-fhwOoAS4WNum1k1Ow2lhLs";
-        getRoute();
-        routes.add(autoRoute);
-
-        Route uberRoute=new Route();
-        uberRoute.setStartAddress(autoRoute.getStartAddress());
-        uberRoute.setEndAddress(autoRoute.getEndAddress());
-        double startLatitude=28.6374378;
-        double startLongitude=77.2927347;
-        double endLatitude=28.5921452;
-        double endLongitude=77.0460772;
-        getUberRouteAndFare(uberRoute,startLatitude,startLongitude, endLatitude, endLongitude);
+//        String source = "preet vihar";
+//        String destination="rithala";
+//
+//        url="https://maps.googleapis.com/maps/api/directions/json?origin=preetvihar&destination=rithala&mode=transit&transit_mode=rail&key=AIzaSyDuZ2e5qarM-fhwOoAS4WNum1k1Ow2lhLs";
+//        getRoute();
+//        url="https://maps.googleapis.com/maps/api/directions/json?origin=preetvihar&destination=rithala&mode=transit&transit_mode=bus&key=AIzaSyDuZ2e5qarM-fhwOoAS4WNum1k1Ow2lhLs";
+//        getRoute();
+//        routes.add(autoRoute);
+//
+//        Route uberRoute=new Route();
+//        uberRoute.setStartAddress(autoRoute.getStartAddress());
+//        uberRoute.setEndAddress(autoRoute.getEndAddress());
+//        double startLatitude=28.6374378;
+//        double startLongitude=77.2927347;
+//        double endLatitude=28.5921452;
+//        double endLongitude=77.0460772;
+//        getUberRouteAndFare(uberRoute,startLatitude,startLongitude, endLatitude, endLongitude);
     }
 
-    public void getRoute(){
+    public void getRoute(final String mode){
         requestQueue = Volley.newRequestQueue(MainActivity.this);
 
         JsonObjectRequest jor = new JsonObjectRequest(url, null,
@@ -186,6 +190,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                             JSONObject jsonObject = legs.getJSONObject(0);
                             String startAddress=jsonObject.getString("start_address");
                             String endAddress=jsonObject.getString("end_address");
+                            System.out.println("Route from "+startAddress+" to "+endAddress);
                             JSONObject duration=jsonObject.getJSONObject("duration");
                             JSONObject distance = jsonObject.getJSONObject("distance");
                             int durationValue=duration.getInt("value");
@@ -231,7 +236,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                                         }
                                     }
                                     else if(type.equals("SUBWAY")) {
-                                        stepFare = getMetroFare(arrivalName,departureName);
                                         try {
                                             type = "Metro " + line.getString("short_name");
                                         }catch (JSONException e){
@@ -242,9 +246,14 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                                 routeFare=routeFare+stepFare;
                                 Step step=new Step(departureName,arrivalName,type,durationValue1,distanceValue1,stepFare);
                                 route.addStep(step);
-                                System.out.println(departureName+" to "+arrivalName+" via "+type+" price"+stepFare);
+                                System.out.println(departureName+" to "+arrivalName+" via "+type+" price "+stepFare);
+                            }
+                            if(mode.equals("metro")){
+                                routeFare=routeFare + getMetroFare(route.getSteps());
+                                System.out.println("Route from "+startAddress+" to "+endAddress);
                             }
                             route.setFare(routeFare);
+                            route.setMode(mode);
                             routes.add(route);
                             System.out.println("route fare "+routeFare);
                         }catch(JSONException e){e.printStackTrace();}
@@ -311,6 +320,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                             route.setDuration(price.getInt("duration"));
                             route.setDistance(price.getInt("distance")*100);
                             route.setFare((price.getInt("high_estimate")+price.getInt("low_estimate"))/2);
+                            route.setMode("uber");
                             System.out.println((price.getInt("high_estimate")+price.getInt("low_estimate"))/2);
                             routes.add(route);
 
@@ -339,10 +349,35 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     }
 
-    private float getMetroFare(String arrivalName, String departureName) {
+    private float getMetroFare(ArrayList<Step> steps) {
+
+        String arrivalName="";
+        String departureName="";
+        System.out.println("size of metro steps "+steps.size());
+        int i=0;
+        for(;i<steps.size();i++){
+            if(steps.get(i).getMode().contains("Metro")) {
+                arrivalName = steps.get(i).getSource();
+                System.out.println(arrivalName+"here");
+                break;
+            }
+        }
+
+        for(i=steps.size()-1;i>=0;i--) {
+            if (steps.get(i).getMode().contains("Metro")) {
+                departureName = steps.get(i).getDestination();
+                System.out.println(departureName+"there");
+                break;
+            }
+        }
+
+        if(arrivalName.equals("")||departureName.equals(""))
+            return 0;
         float fare=0;
         String json = null;
         int arrivalId=0,deparureId=0;
+        arrivalName=arrivalName.replace("Metro Station","").trim();
+        departureName=departureName.replace("Metro Station","").trim();
         boolean arrivalFlag=false,departureFlag=false;
         try {
             InputStream is = this.getAssets().open("metro.json");
@@ -358,23 +393,25 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         try {
             JSONObject obj = new JSONObject(json);
             JSONArray metroArray = obj.getJSONArray("metro");
+            System.out.println(arrivalName+" "+departureName);
             JSONObject jsonObject=metroArray.getJSONObject(0);
-            for(int i=1;i<=jsonObject.length();i++){
-                if(arrivalName.equalsIgnoreCase(jsonObject.getString(""+i))) {
-                    arrivalId = i;
+            for(int j=1;j<metroArray.length();j++){
+                if(arrivalName.equalsIgnoreCase(jsonObject.getString(""+j))) {
+                    arrivalId = j;
                     arrivalFlag=true;
                 }
-                if(departureName.equalsIgnoreCase(jsonObject.getString(""+i))) {
-                    deparureId = i;
+                if(departureName.equalsIgnoreCase(jsonObject.getString(""+j))) {
+                    deparureId = j;
                     departureFlag=true;
                 }
-                if(arrivalFlag==true&&departureFlag==true)
+                if(arrivalFlag&&departureFlag)
                     break;
             }
             if(deparureId==0||arrivalId==0)
                 return fare;
             JSONObject fareObject=metroArray.getJSONObject(deparureId);
             fare=fareObject.getInt(""+arrivalId);
+            System.out.println(fare);
         } catch (JSONException e) {
             e.printStackTrace();
             return fare;
@@ -396,9 +433,11 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     private float getAutoFare(int distance){
         float fare=25;
+        distance=distance/1000;
         if(distance-2>0){
             fare =fare+8*(distance-2);
         }
+        System.out.println("auto "+fare);
         return fare;
     }
 
@@ -439,6 +478,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             if (resultCode == RESULT_OK) {
                 Place place = PlaceAutocomplete.getPlace(this, data);
                 e1.setText(place.getName());
+                startLatitude=place.getLatLng().latitude;
+                startLongitude=place.getLatLng().longitude;
                 initCamera(place.getLatLng());
                 if(m1!=null || m2!=null)
                 {
@@ -461,6 +502,10 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             if (resultCode == RESULT_OK) {
                 Place place = PlaceAutocomplete.getPlace(this, data);
                 e2.setText(place.getName());
+                endLatitude=place.getLatLng().latitude;
+                endLongitude=place.getLatLng().longitude;
+                callApis(e1.getText().toString().replace(" ",""),e2.getText().toString().replace(" ",""));
+
                 //zoom out the map
                 if(m2!=null)
                     m2.remove();
@@ -513,6 +558,25 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             return null;
         }
         return bestLocation;
+    }
+
+    private void callApis(String source,String destination){
+
+        url="https://maps.googleapis.com/maps/api/directions/json?origin="+source+"&destination="+destination+"&mode=transit&transit_mode=rail&key=AIzaSyDuZ2e5qarM-fhwOoAS4WNum1k1Ow2lhLs";
+        getRoute("metro");
+        url="https://maps.googleapis.com/maps/api/directions/json?origin=preetvihar&destination=rithala&mode=transit&transit_mode=bus&key=AIzaSyDuZ2e5qarM-fhwOoAS4WNum1k1Ow2lhLs";
+        getRoute("bus");
+
+        routes.add(autoRoute);
+        autoRoute.setMode("auto");
+        Route uberRoute=new Route();
+        uberRoute.setStartAddress(autoRoute.getStartAddress());
+        uberRoute.setEndAddress(autoRoute.getEndAddress());
+//        double startLatitude=28.6374378;
+//        double startLongitude=77.2927347;
+//        double endLatitude=28.5921452;
+//        double endLongitude=77.0460772;
+        getUberRouteAndFare(uberRoute,startLatitude,startLongitude, endLatitude, endLongitude);
     }
 
     protected void onStop() {

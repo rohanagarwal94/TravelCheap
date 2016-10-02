@@ -14,6 +14,16 @@ public class Route {
     private int distance;
     private float fare;
 
+    public String getMode() {
+        return mode;
+    }
+
+    public void setMode(String mode) {
+        this.mode = mode;
+    }
+
+    private String mode;
+
     public float getFare() {
         return fare;
     }
