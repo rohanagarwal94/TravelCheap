@@ -4,6 +4,7 @@ import android.Manifest;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
 import android.location.Location;
 import android.location.LocationManager;
 import android.support.annotation.NonNull;
@@ -40,6 +41,7 @@ import com.google.android.gms.common.GooglePlayServicesRepairableException;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.Status;
 import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.location.places.AutocompleteFilter;
 import com.google.android.gms.location.places.Place;
 import com.google.android.gms.location.places.ui.PlaceAutocomplete;
 import com.google.android.gms.maps.CameraUpdate;
@@ -52,6 +54,8 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.maps.model.Polyline;
+import com.google.android.gms.maps.model.PolylineOptions;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -70,15 +74,17 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     int PLACE_AUTOCOMPLETE_REQUEST_CODE2 = 2;
 
     private RequestQueue requestQueue;
-    private String url,uberUrl;
+    private String url, uberUrl;
     private ArrayList<Route> routes;
     private Route autoRoute;
-    private Marker m1,m2;
+    private PolylineOptions lineOptions;
+    private Marker m1, m2;
 
     private TextView e1, e2;
     private GoogleMap mMap;
     private GoogleApiClient mGoogleApiClient;
     private LatLng latLng;
+    private Polyline polyline;
     private LocationManager locationManager;
     private static final int REQUEST_CALL_LOCATION = 100;
 
@@ -89,27 +95,16 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         setContentView(R.layout.activity_main);
 
         if (mGoogleApiClient == null) {
-            mGoogleApiClient = new GoogleApiClient.Builder(this)
+            mGoogleApiClient = new GoogleApiClient.Builder(getApplicationContext())
                     .addApi(LocationServices.API)
                     .build();
         }
-
-//        int permission = ActivityCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.ACCESS_FINE_LOCATION);
-//        if (permission != PackageManager.PERMISSION_GRANTED) {
-//            ActivityCompat.requestPermissions(
-//                    MainActivity.this,
-//                    new String[]{Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION},
-//                    REQUEST_CALL_LOCATION);
-//        }
-//        Location mLastLocation = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
-
-
-//        String locationProvider = LocationManager.NETWORK_PROVIDER;
 
         SupportMapFragment supportMapFragment = ((SupportMapFragment)
                 getSupportFragmentManager().findFragmentById(R.id.map));
         supportMapFragment.getMapAsync(this);
 
+        lineOptions = new PolylineOptions();
         e1 = (TextView) findViewById(R.id.source);
         e2 = (TextView) findViewById(R.id.destination);
 
@@ -117,8 +112,10 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             @Override
             public void onClick(View view) {
                 try {
+                    AutocompleteFilter typeFilter = new AutocompleteFilter.Builder().setCountry("IN").build();
                     Intent intent =
                             new PlaceAutocomplete.IntentBuilder(PlaceAutocomplete.MODE_FULLSCREEN)
+                                    .setFilter(typeFilter)
                                     .build(MainActivity.this);
                     startActivityForResult(intent, PLACE_AUTOCOMPLETE_REQUEST_CODE1);
                 } catch (GooglePlayServicesRepairableException e) {
@@ -145,145 +142,83 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             }
         });
 
-        routes=new ArrayList<>();
-        autoRoute=new Route();
+        routes = new ArrayList<>();
+        autoRoute = new Route();
         String source = "preet vihar";
-        String destination="rithala";
+        String destination = "rithala";
 
-        url="https://maps.googleapis.com/maps/api/directions/json?origin=preetvihar&destination=rithala&mode=transit&transit_mode=rail&key=AIzaSyDuZ2e5qarM-fhwOoAS4WNum1k1Ow2lhLs";
+        url = "https://maps.googleapis.com/maps/api/directions/json?origin=preetvihar&destination=rithala&mode=transit&transit_mode=rail&key=AIzaSyDuZ2e5qarM-fhwOoAS4WNum1k1Ow2lhLs";
         getRoute();
-        url="https://maps.googleapis.com/maps/api/directions/json?origin=preetvihar&destination=rithala&mode=transit&transit_mode=bus&key=AIzaSyDuZ2e5qarM-fhwOoAS4WNum1k1Ow2lhLs";
+        url = "https://maps.googleapis.com/maps/api/directions/json?origin=preetvihar&destination=rithala&mode=transit&transit_mode=bus&key=AIzaSyDuZ2e5qarM-fhwOoAS4WNum1k1Ow2lhLs";
         getRoute();
         routes.add(autoRoute);
 
-        Route uberRoute=new Route();
+        Route uberRoute = new Route();
         uberRoute.setStartAddress(autoRoute.getStartAddress());
         uberRoute.setEndAddress(autoRoute.getEndAddress());
-        double startLatitude=28.6374378;
-        double startLongitude=77.2927347;
-        double endLatitude=28.5921452;
-        double endLongitude=77.0460772;
-        getUberRouteAndFare(uberRoute,startLatitude,startLongitude, endLatitude, endLongitude);
+        double startLatitude = 28.6374378;
+        double startLongitude = 77.2927347;
+        double endLatitude = 28.5921452;
+        double endLongitude = 77.0460772;
+        getUberRouteAndFare(uberRoute, startLatitude, startLongitude, endLatitude, endLongitude);
     }
 
-    public void getRoute(){
-        requestQueue = Volley.newRequestQueue(MainActivity.this);
-
-        JsonObjectRequest jor = new JsonObjectRequest(url, null,
-                new Response.Listener<JSONObject>() {
-                    @Override
-                    public void onResponse(JSONObject response) {
-                        try{
-                            System.out.println(response.toString());
-                            JSONArray routesArray = response.getJSONArray("routes");
-                            System.out.println(routesArray.length());
-                            if(routesArray.length()==0)
-                                return;
-                            JSONObject routeObject=routesArray.getJSONObject(0);
-                            JSONArray legs = routeObject.getJSONArray("legs");
-                            System.out.println("legs "+legs.length());
-                            Route route=new Route();
-                            JSONObject jsonObject = legs.getJSONObject(0);
-                            String startAddress=jsonObject.getString("start_address");
-                            String endAddress=jsonObject.getString("end_address");
-                            JSONObject duration=jsonObject.getJSONObject("duration");
-                            JSONObject distance = jsonObject.getJSONObject("distance");
-                            int durationValue=duration.getInt("value");
-                            int distanceValue=distance.getInt("value");
-                            autoRoute.setFare(getAutoFare(distanceValue));
-                            autoRoute.setEndAddress(endAddress);
-                            autoRoute.setStartAddress(startAddress);
-                            autoRoute.setDuration(durationValue);
-                            autoRoute.setDistance(distanceValue);
-                            route.setDistance(distanceValue);
-                            route.setDuration(durationValue);
-                            route.setEndAddress(startAddress);
-                            route.setEndAddress(endAddress);
-                            float routeFare=0;
-                            JSONArray steps = jsonObject.getJSONArray("steps");
-
-                            for(int j=0;j<steps.length();j++){
-                                JSONObject jsonObject1 = steps.getJSONObject(j);
-                                String travelMode=jsonObject1.getString("travel_mode");
-                                JSONObject duration1=jsonObject1.getJSONObject("duration");
-                                JSONObject distance1 = jsonObject1.getJSONObject("distance");
-                                int durationValue1=duration1.getInt("value");
-                                int distanceValue1=distance1.getInt("value");
-                                float stepFare=0;
-                                String type="Walking";
-                                String arrivalName="";
-                                String departureName="";
-                                if(travelMode.equals("WALKING")!=true) {
-                                    JSONObject transitDetails=jsonObject1.getJSONObject("transit_details");
-                                    JSONObject line=transitDetails.getJSONObject("line");
-                                    JSONObject vehicle=line.getJSONObject("vehicle");
-                                    type=vehicle.getString("type");
-                                    JSONObject arrivalStop = transitDetails.getJSONObject("arrival_stop");
-                                    JSONObject departureStop = transitDetails.getJSONObject("departure_stop");
-                                    arrivalName = arrivalStop.getString("name");
-                                    departureName = departureStop.getString("name");
-                                    if(type.equals("BUS")) {
-                                        stepFare = getBusFare(distanceValue1);
-                                        try {
-                                            type = "Bus " + line.getString("short_name");
-                                        }catch (JSONException e){
-                                            type="Bus " + line.getString("name");
-                                        }
-                                    }
-                                    else if(type.equals("SUBWAY")) {
-                                        stepFare = getMetroFare(arrivalName,departureName);
-                                        try {
-                                            type = "Metro " + line.getString("short_name");
-                                        }catch (JSONException e){
-                                            type="Metro " + line.getString("name");
-                                        }
-                                    }
-                                }
-                                routeFare=routeFare+stepFare;
-                                Step step=new Step(departureName,arrivalName,type,durationValue1,distanceValue1,stepFare);
-                                route.addStep(step);
-                                System.out.println(departureName+" to "+arrivalName+" via "+type+" price"+stepFare);
-                            }
-                            route.setFare(routeFare);
-                            routes.add(route);
-                            System.out.println("route fare "+routeFare);
-                        }catch(JSONException e){e.printStackTrace();}
-                    }
-                },
-                new Response.ErrorListener() {
-                    @Override
-                    public void onErrorResponse(VolleyError error) {
-                        //progressDialog.dismiss();
-                        Toast.makeText(getApplicationContext(),"Error in internet connection.",Toast.LENGTH_LONG).show();
-                        Log.e("Volley",error.toString());
-
-                    }
-                }
-        ){
-            @Override
-            public Map<String, String> getHeaders() throws AuthFailureError {
-                HashMap<String, String> headers = new HashMap<String, String>();
-                System.out.println("here it is");
-                return headers;
-            }
-
-        };
-        requestQueue.add(jor);
-
-    }
 
     @Override
     public void onMapReady(GoogleMap map) {
-
         if (map != null) {
             mMap = map;
-//            locationManager = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
-//            Location mLastLocation = getLastKnownLocation();
-//            if(latLng!=null)
-//                latLng = new LatLng(mLastLocation.getLatitude(), mLastLocation.getLongitude());
-            initCamera(new LatLng(28.591407,77.318911));
+            setUpMap();
         }
     }
+
+
+
+    @Override
+    protected void onStart() {
+        mGoogleApiClient.connect();
+        super.onStart();
+    }
+
+    private void initCamera(LatLng latlng) {
+        CameraPosition position = CameraPosition.builder()
+                .target(latlng)
+                .zoom(18f)
+                .bearing(0.0f)
+                .tilt(40f)
+                .build();
+
+        mMap.animateCamera(CameraUpdateFactory.newCameraPosition(position), null);
+
+        mMap.setMapType(GoogleMap.MAP_TYPE_NORMAL);
+        mMap.setTrafficEnabled(true);
+        int permission = ActivityCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.ACCESS_FINE_LOCATION);
+        if (permission != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(
+                    MainActivity.this,
+                    new String[]{Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION},
+                    REQUEST_CALL_LOCATION);
+        }
+        mMap.setMyLocationEnabled(true);
+        mMap.getUiSettings().setZoomControlsEnabled(true);
+    }
+
+
+    private void setUpMap() {
+
+//        int permission = ActivityCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.ACCESS_FINE_LOCATION);
+//        if (permission != PackageManager.PERMISSION_GRANTED) {
+//            ActivityCompat.requestPermissions(
+//                    MainActivity.this,
+//                    new String[]{Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION},
+//                    REQUEST_CALL_LOCATION);
+//        }
+//        Location mCurrentLocation = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
+//        initCamera(new LatLng(mCurrentLocation.getLatitude(),mCurrentLocation.getLongitude()));
+        initCamera(new LatLng(28.5909765,77.3187686));
+
+    }
+
 
     public void getUberRouteAndFare(final Route route, double startLatitude, double startLongitude, double endLatitude, double endLongitude) {
         requestQueue = Volley.newRequestQueue(MainActivity.this);
@@ -394,6 +329,114 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         return fare;
     }
 
+
+    public void getRoute() {
+        requestQueue = Volley.newRequestQueue(MainActivity.this);
+
+        JsonObjectRequest jor = new JsonObjectRequest(url, null,
+                new Response.Listener<JSONObject>() {
+                    @Override
+                    public void onResponse(JSONObject response) {
+                        try {
+                            System.out.println(response.toString());
+                            JSONArray routesArray = response.getJSONArray("routes");
+                            System.out.println(routesArray.length());
+                            if (routesArray.length() == 0)
+                                return;
+                            JSONObject routeObject = routesArray.getJSONObject(0);
+                            JSONArray legs = routeObject.getJSONArray("legs");
+                            System.out.println("legs " + legs.length());
+                            Route route = new Route();
+                            JSONObject jsonObject = legs.getJSONObject(0);
+                            String startAddress = jsonObject.getString("start_address");
+                            String endAddress = jsonObject.getString("end_address");
+                            JSONObject duration = jsonObject.getJSONObject("duration");
+                            JSONObject distance = jsonObject.getJSONObject("distance");
+                            int durationValue = duration.getInt("value");
+                            int distanceValue = distance.getInt("value");
+                            autoRoute.setFare(getAutoFare(distanceValue));
+                            autoRoute.setEndAddress(endAddress);
+                            autoRoute.setStartAddress(startAddress);
+                            autoRoute.setDuration(durationValue);
+                            autoRoute.setDistance(distanceValue);
+                            route.setDistance(distanceValue);
+                            route.setDuration(durationValue);
+                            route.setEndAddress(startAddress);
+                            route.setEndAddress(endAddress);
+                            float routeFare = 0;
+                            JSONArray steps = jsonObject.getJSONArray("steps");
+
+                            for (int j = 0; j < steps.length(); j++) {
+                                JSONObject jsonObject1 = steps.getJSONObject(j);
+                                String travelMode = jsonObject1.getString("travel_mode");
+                                JSONObject duration1 = jsonObject1.getJSONObject("duration");
+                                JSONObject distance1 = jsonObject1.getJSONObject("distance");
+                                int durationValue1 = duration1.getInt("value");
+                                int distanceValue1 = distance1.getInt("value");
+                                float stepFare = 0;
+                                String type = "Walking";
+                                String arrivalName = "";
+                                String departureName = "";
+                                if (travelMode.equals("WALKING") != true) {
+                                    JSONObject transitDetails = jsonObject1.getJSONObject("transit_details");
+                                    JSONObject line = transitDetails.getJSONObject("line");
+                                    JSONObject vehicle = line.getJSONObject("vehicle");
+                                    type = vehicle.getString("type");
+                                    JSONObject arrivalStop = transitDetails.getJSONObject("arrival_stop");
+                                    JSONObject departureStop = transitDetails.getJSONObject("departure_stop");
+                                    arrivalName = arrivalStop.getString("name");
+                                    departureName = departureStop.getString("name");
+                                    if (type.equals("BUS")) {
+                                        stepFare = getBusFare(distanceValue1);
+                                        try {
+                                            type = "Bus " + line.getString("short_name");
+                                        } catch (JSONException e) {
+                                            type = "Bus " + line.getString("name");
+                                        }
+                                    } else if (type.equals("SUBWAY")) {
+                                        stepFare = getMetroFare(arrivalName, departureName);
+                                        try {
+                                            type = "Metro " + line.getString("short_name");
+                                        } catch (JSONException e) {
+                                            type = "Metro " + line.getString("name");
+                                        }
+                                    }
+                                }
+                                routeFare = routeFare + stepFare;
+                                Step step = new Step(departureName, arrivalName, type, durationValue1, distanceValue1, stepFare);
+                                route.addStep(step);
+                                System.out.println(departureName + " to " + arrivalName + " via " + type + " price" + stepFare);
+                            }
+                            route.setFare(routeFare);
+                            routes.add(route);
+                            System.out.println("route fare " + routeFare);
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                },
+                new Response.ErrorListener() {
+                    @Override
+                    public void onErrorResponse(VolleyError error) {
+                        //progressDialog.dismiss();
+                        Toast.makeText(getApplicationContext(), "Error in internet connection.", Toast.LENGTH_LONG).show();
+                        Log.e("Volley", error.toString());
+
+                    }
+                }
+        ) {
+            @Override
+            public Map<String, String> getHeaders() throws AuthFailureError {
+                HashMap<String, String> headers = new HashMap<String, String>();
+                System.out.println("here it is");
+                return headers;
+            }
+
+        };
+        requestQueue.add(jor);
+
+    }
+
     private float getAutoFare(int distance){
         float fare=25;
         if(distance-2>0){
@@ -402,36 +445,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         return fare;
     }
 
-    @Override
-    protected void onStart() {
-        mGoogleApiClient.connect();
-        super.onStart();
-    }
-
-    private void initCamera(LatLng latlng) {
-        CameraPosition position = CameraPosition.builder()
-                .target(latlng)
-                .zoom(18f)
-                .bearing(0.0f)
-                .tilt(40f)
-                .build();
-
-        mMap.animateCamera(CameraUpdateFactory.newCameraPosition(position), null);
-
-        mMap.setMapType(GoogleMap.MAP_TYPE_NORMAL);
-        mMap.setTrafficEnabled(true);
-        int permission = ActivityCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.ACCESS_FINE_LOCATION);
-        if (permission != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(
-                    MainActivity.this,
-                    new String[]{Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION},
-                    REQUEST_CALL_LOCATION);
-        }
-        mMap.setMyLocationEnabled(true);
-        mMap.getUiSettings().setZoomControlsEnabled(true);
-        mMap.getUiSettings().setMyLocationButtonEnabled(true);
-
-    }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
@@ -473,8 +486,17 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                     builder.include(m2.getPosition());
 
                 LatLngBounds bounds = builder.build();
+                if(polyline!=null)
+                    polyline.remove();
+
                 CameraUpdate cu = CameraUpdateFactory.newLatLngBounds(bounds, 90);
                 mMap.moveCamera(cu);
+                lineOptions.add(m1.getPosition());
+                lineOptions.add(m2.getPosition());
+                lineOptions.width(2);
+                lineOptions.color(Color.RED);
+                polyline= mMap.addPolyline(lineOptions);
+
 
                 Log.i("Place name", "Place: " + place.getName());
             } else if (resultCode == PlaceAutocomplete.RESULT_ERROR) {
@@ -488,60 +510,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         }
     }
 
-    private Location getLastKnownLocation() {
-        List<String> providers = locationManager.getProviders(true);
-        Location bestLocation = null;
-        for (String provider : providers) {
-            int permission = ActivityCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.ACCESS_FINE_LOCATION);
-            if (permission != PackageManager.PERMISSION_GRANTED) {
-                ActivityCompat.requestPermissions(
-                        MainActivity.this,
-                        new String[]{Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION},
-                        REQUEST_CALL_LOCATION);
-            }
-            Location l = locationManager.getLastKnownLocation(provider);
-
-            if (l == null) {
-                continue;
-            }
-            if (bestLocation == null
-                    || l.getAccuracy() < bestLocation.getAccuracy()) {
-                bestLocation = l;
-            }
-        }
-        if (bestLocation == null) {
-            return null;
-        }
-        return bestLocation;
-    }
-
     protected void onStop() {
         mGoogleApiClient.disconnect();
         super.onStop();
     }
 
-//
-//    @Override
-//    public void onConnected(Bundle connectionHint) {
-//        int permission = ActivityCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.ACCESS_FINE_LOCATION);
-//        if (permission != PackageManager.PERMISSION_GRANTED) {
-//            ActivityCompat.requestPermissions(
-//                    MainActivity.this,
-//                    new String[]{Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION},
-//                    REQUEST_CALL_LOCATION);
-//        }
-//       Location mLastLocation = LocationServices.FusedLocationApi.getLastLocation(
-//                mGoogleApiClient);
-//        latLng=new LatLng(mLastLocation.getLatitude(),mLastLocation.getLongitude());
-//    }
-//
-//    @Override
-//    public void onConnectionSuspended(int i) {
-//
-//    }
-//
-//    @Override
-//    public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
-//
-//    }
 }
