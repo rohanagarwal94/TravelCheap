@@ -136,23 +136,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         routes=new ArrayList<>();
         autoRoute=new Route();
-//        String source = "preet vihar";
-//        String destination="rithala";
-//
-//        url="https://maps.googleapis.com/maps/api/directions/json?origin=preetvihar&destination=rithala&mode=transit&transit_mode=rail&key=AIzaSyDuZ2e5qarM-fhwOoAS4WNum1k1Ow2lhLs";
-//        getRoute();
-//        url="https://maps.googleapis.com/maps/api/directions/json?origin=preetvihar&destination=rithala&mode=transit&transit_mode=bus&key=AIzaSyDuZ2e5qarM-fhwOoAS4WNum1k1Ow2lhLs";
-//        getRoute();
-//        routes.add(autoRoute);
-//
-//        Route uberRoute=new Route();
-//        uberRoute.setStartAddress(autoRoute.getStartAddress());
-//        uberRoute.setEndAddress(autoRoute.getEndAddress());
-//        double startLatitude=28.6374378;
-//        double startLongitude=77.2927347;
-//        double endLatitude=28.5921452;
-//        double endLongitude=77.0460772;
-//        getUberRouteAndFare(uberRoute,startLatitude,startLongitude, endLatitude, endLongitude);
     }
 
     private List<LatLng> decodePoly(String encoded) {
@@ -209,7 +192,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                             Polyline polyline = mMap.addPolyline(new PolylineOptions()
                                     .addAll(list)
                                     .width(12)
-                                    .color(Color.parseColor(color))//Google maps blue color
+                                    .color(Color.parseColor(color))//Google maps red color
                                     .geodesic(true)
                             );
                             JSONArray legs = routeObject.getJSONArray("legs");
@@ -274,7 +257,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                             Polyline polyline = mMap.addPolyline(new PolylineOptions()
                                     .addAll(list)
                                     .width(12)
-                                    .color(Color.parseColor(color))//Google maps blue color
+                                    .color(Color.parseColor(color))//Google maps violet color for metro and brown color for bus
                                     .geodesic(true)
                             );
                             JSONArray legs = routeObject.getJSONArray("legs");
@@ -348,9 +331,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                             route.setFare(routeFare);
                             route.setMode(mode);
                             routes.add(route);
-                            Intent i = new Intent(getBaseContext(), FareListActivity.class);
-                            i.putExtra("key", routes.get(1));
-                            startActivity(i);
                             System.out.println("route fare "+routeFare);
                         }catch(JSONException e){e.printStackTrace();}
                     }
