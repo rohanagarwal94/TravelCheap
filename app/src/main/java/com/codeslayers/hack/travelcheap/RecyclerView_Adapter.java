@@ -29,9 +29,11 @@ public class RecyclerView_Adapter extends RecyclerView.Adapter<RecyclerViewHolde
     public void onBindViewHolder(RecyclerViewHolder holder, int position) {
         final Step model = data.get(position);
         RecyclerViewHolder mainHolder = holder;// holder
-        mainHolder.distance.setText(model.getDistance()+"");
-        mainHolder.duration.setText(model.getDuration()+"");
-        mainHolder.fare.setText((int) model.getFare()+"");
+        float distance=model.getDistance()/1000;
+        float duration =model.getDuration()/600;
+        mainHolder.distance.setText(distance+" km");
+        mainHolder.duration.setText(duration+" min");
+        mainHolder.fare.setText(" Rs. "+ model.getFare());
         mainHolder.mode.setText(model.getMode()+"");
         if(model.getMode().contains("Walking")){
             mainHolder.image.setImageDrawable(context.getResources().getDrawable(R.drawable.walking));
