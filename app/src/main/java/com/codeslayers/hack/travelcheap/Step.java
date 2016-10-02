@@ -1,15 +1,41 @@
 package com.codeslayers.hack.travelcheap;
 
+import android.os.Parcel;
+import android.os.Parcelable;
+
+
+
 /**
  * Created by lenovo on 01/10/2016.
  */
 
-public class Step {
+public class Step implements Parcelable {
     private String source;
     private String destination;
     private String mode;
     private int distance;
     private float fare;
+
+    protected Step(Parcel in) {
+        source = in.readString();
+        destination = in.readString();
+        mode = in.readString();
+        distance = in.readInt();
+        fare = in.readFloat();
+        duration = in.readInt();
+    }
+
+    public static final Creator<Step> CREATOR = new Creator<Step>() {
+        @Override
+        public Step createFromParcel(Parcel in) {
+            return new Step(in);
+        }
+
+        @Override
+        public Step[] newArray(int size) {
+            return new Step[size];
+        }
+    };
 
     public float getFare() {
         return fare;
@@ -71,4 +97,18 @@ public class Step {
     private int duration;
 
 
+    @Override
+    public int describeContents() {
+        return 0;
+    }
+
+    @Override
+    public void writeToParcel(Parcel dest, int flags) {
+        dest.writeString(source);
+        dest.writeString(destination);
+        dest.writeString(mode);
+        dest.writeInt(distance);
+        dest.writeFloat(fare);
+        dest.writeInt(duration);
+    }
 }

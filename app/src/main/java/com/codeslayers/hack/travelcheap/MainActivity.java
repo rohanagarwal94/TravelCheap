@@ -76,9 +76,11 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     private String url, uberUrl;
     private ArrayList<Route> routes;
     private Route autoRoute;
-
+    private Button b1;
+    ArrayList<Polyline> polylines;
     private Marker m1,m2;
     double startLatitude;
+    Polyline drivingPolyline;
     double startLongitude;
     double endLatitude;
     double endLongitude;
@@ -89,11 +91,16 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     private LocationManager locationManager;
     private static final int REQUEST_CALL_LOCATION = 100;
 
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        b1=(Button)findViewById(R.id.button6);
+
+
+        polylines=new ArrayList<>();
         if (mGoogleApiClient == null) {
             mGoogleApiClient = new GoogleApiClient.Builder(getApplicationContext())
                     .addApi(LocationServices.API)
@@ -122,6 +129,33 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 } catch (GooglePlayServicesNotAvailableException e) {
                     e.printStackTrace();
                 }
+            }
+        });
+
+        b1.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                
+
+                Intent i= new Intent(getApplicationContext(),FareListActivity.class);
+//                Bundle bundle=new Bundle();
+//                bundle.putParcelableArrayList("routes",routes);
+//                i.putExtras(bundle);
+
+                float min=Integer.MAX_VALUE;
+                int index=0;
+                for(int j=0;j<routes.size();j++){
+                    if(routes.get(j).getFare()<min) {
+                        min=routes.get(j).getFare();
+                        index = j;
+                    }
+                }
+                System.out.println("min fare "+routes.get(index).getFare());
+                ArrayList<Step> steps=routes.get(index).getSteps();
+                Bundle bundle=new Bundle();
+                bundle.putParcelableArrayList("steps",steps);
+                i.putExtras(bundle);
+                startActivity(i);
             }
         });
 
@@ -198,7 +232,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                             JSONObject overviewPolyline=routeObject.getJSONObject("overview_polyline");
                             String encodedString=overviewPolyline.getString("points");
                             List<LatLng> list = decodePoly(encodedString);
-                            Polyline polyline = mMap.addPolyline(new PolylineOptions()
+                            if(drivingPolyline!=null)
+                                drivingPolyline.remove();
+                            drivingPolyline = mMap.addPolyline(new PolylineOptions()
                                     .addAll(list)
                                     .width(12)
                                     .color(Color.parseColor(color))//Google maps red color
@@ -246,7 +282,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     }
 
-    public void getRoute(final String mode, String url, final String color){
+    public void getRoute(final String mode, String url, final String color,final int index){
         requestQueue = Volley.newRequestQueue(MainActivity.this);
 
         JsonObjectRequest jor = new JsonObjectRequest(url, null,
@@ -263,12 +299,21 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                             JSONObject overviewPolyline=routeObject.getJSONObject("overview_polyline");
                             String encodedString=overviewPolyline.getString("points");
                             List<LatLng> list = decodePoly(encodedString);
+                            if(polylines.size()==2) {
+                                Polyline polyline1 = polylines.get(0);
+                                Polyline polyline2 = polylines.get(1);
+                                polyline1.remove();
+                                polyline2.remove();
+                                polylines.clear();
+                            }
+
                             Polyline polyline = mMap.addPolyline(new PolylineOptions()
                                     .addAll(list)
                                     .width(12)
                                     .color(Color.parseColor(color))//Google maps violet color for metro and brown color for bus
                                     .geodesic(true)
                             );
+                            polylines.add(polyline);
                             JSONArray legs = routeObject.getJSONArray("legs");
                             System.out.println("legs "+legs.length());
                             Route route=new Route();
@@ -377,39 +422,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         }
     }
 
-
-
-    @Override
-    protected void onStart() {
-        mGoogleApiClient.connect();
-        super.onStart();
-    }
-
-    private void initCamera(LatLng latlng) {
-        CameraPosition position = CameraPosition.builder()
-                .target(latlng)
-                .zoom(18f)
-                .bearing(0.0f)
-                .tilt(40f)
-                .build();
-
-        mMap.animateCamera(CameraUpdateFactory.newCameraPosition(position), null);
-
-        mMap.setMapType(GoogleMap.MAP_TYPE_NORMAL);
-        mMap.setTrafficEnabled(true);
-        int permission = ActivityCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.ACCESS_FINE_LOCATION);
-        if (permission != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(
-                    MainActivity.this,
-                    new String[]{Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION},
-                    REQUEST_CALL_LOCATION);
-        }
-        mMap.setMyLocationEnabled(true);
-        mMap.getUiSettings().setZoomControlsEnabled(true);
-    }
-
-
-
     public void getUberRouteAndFare(final Route route, double startLatitude, double startLongitude, double endLatitude, double endLongitude) {
         requestQueue = Volley.newRequestQueue(MainActivity.this);
         uberUrl="https://api.uber.com/v1/estimates/price?start_latitude="+startLatitude+"&start_longitude="+startLongitude+"&end_latitude="+endLatitude+"&end_longitude="+endLongitude;
@@ -426,6 +438,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                             int minIndex=0;
                             for(int i=0;i<prices.length();i++){
                                 JSONObject jsonObject=prices.getJSONObject(i);
+                                if(jsonObject.getString("localized_display_name").equals("uberPOOL"))
+                                    continue;
                                 int value=jsonObject.getInt("low_estimate");
                                 if(value<min) {
                                     min = value;
@@ -544,7 +558,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         else if(distance>=4)
             fare=10f;
         else
-        fare=5f;
+            fare=5f;
         return fare;
     }
 
@@ -559,6 +573,37 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
 
     @Override
+    protected void onStart() {
+        mGoogleApiClient.connect();
+        super.onStart();
+    }
+
+    private void initCamera(LatLng latlng) {
+        CameraPosition position = CameraPosition.builder()
+                .target(latlng)
+                .zoom(18f)
+                .bearing(0.0f)
+                .tilt(40f)
+                .build();
+
+        mMap.animateCamera(CameraUpdateFactory.newCameraPosition(position), null);
+
+        mMap.setMapType(GoogleMap.MAP_TYPE_NORMAL);
+        mMap.setTrafficEnabled(true);
+        int permission = ActivityCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.ACCESS_FINE_LOCATION);
+        if (permission != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(
+                    MainActivity.this,
+                    new String[]{Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION},
+                    REQUEST_CALL_LOCATION);
+        }
+        mMap.setMyLocationEnabled(true);
+        mMap.getUiSettings().setZoomControlsEnabled(true);
+        mMap.getUiSettings().setMyLocationButtonEnabled(true);
+
+    }
+
+    @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (requestCode == PLACE_AUTOCOMPLETE_REQUEST_CODE1) {
             if (resultCode == RESULT_OK) {
@@ -566,15 +611,17 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 e1.setText(place.getName());
                 startLatitude=place.getLatLng().latitude;
                 startLongitude=place.getLatLng().longitude;
+                if(!e1.getText().toString().equals("")&&!e2.getText().toString().equals(""))
+                    callApis(e1.getText().toString().replace(" ",""),e2.getText().toString().replace(" ",""));
                 initCamera(place.getLatLng());
                 if(m1!=null || m2!=null)
                 {
                     m1.remove();
                     m2.remove();
                 }
-                   m1= mMap.addMarker(new MarkerOptions()
+                m1= mMap.addMarker(new MarkerOptions()
                         .position(place.getLatLng())
-                        );
+                );
                 Log.i("Place name", "Place: " + place.getName());
             } else if (resultCode == PlaceAutocomplete.RESULT_ERROR) {
                 Status status = PlaceAutocomplete.getStatus(this, data);
@@ -590,7 +637,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 e2.setText(place.getName());
                 endLatitude=place.getLatLng().latitude;
                 endLongitude=place.getLatLng().longitude;
-                callApis(e1.getText().toString().replace(" ",""),e2.getText().toString().replace(" ",""));
+                if(!e1.getText().toString().equals("")&&!e2.getText().toString().equals(""))
+                    callApis(e1.getText().toString().replace(" ",""),e2.getText().toString().replace(" ",""));
 
                 //zoom out the map
                 if(m2!=null)
@@ -600,11 +648,10 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 );
                 LatLngBounds.Builder builder = new LatLngBounds.Builder();
 
-                    builder.include(m1.getPosition());
-                    builder.include(m2.getPosition());
+                builder.include(m1.getPosition());
+                builder.include(m2.getPosition());
 
                 LatLngBounds bounds = builder.build();
-
                 CameraUpdate cu = CameraUpdateFactory.newLatLngBounds(bounds, 90);
                 mMap.moveCamera(cu);
 
@@ -649,13 +696,14 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     private void callApis(String source,String destination){
 
+        routes.clear();
         String color="#6A1B9A";
         String url="https://maps.googleapis.com/maps/api/directions/json?origin="+source+"&destination="+destination+"&mode=transit&transit_mode=rail&key=AIzaSyDuZ2e5qarM-fhwOoAS4WNum1k1Ow2lhLs";
-        getRoute("metro",url,color);
+        getRoute("metro",url,color,0);
 
         color="#5D4037";
         url="https://maps.googleapis.com/maps/api/directions/json?origin="+source+"&destination="+destination+"&mode=transit&transit_mode=bus&key=AIzaSyDuZ2e5qarM-fhwOoAS4WNum1k1Ow2lhLs";
-        getRoute("bus",url,color);
+        getRoute("bus",url,color,1);
 
         url="https://maps.googleapis.com/maps/api/directions/json?origin="+source+"&destination="+destination+"&mode=driving&key=AIzaSyDuZ2e5qarM-fhwOoAS4WNum1k1Ow2lhLs";
         color="#E53935";
@@ -676,6 +724,4 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     protected void onStop() {
         mGoogleApiClient.disconnect();
         super.onStop();
-    }
-
-}
+    }}
