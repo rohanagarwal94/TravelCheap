@@ -1,4 +1,4 @@
-package com.codeslayers.hack.travelcheap;
+package com.codeslayers.hack.travelcheap.Activity;
 
 import android.Manifest;
 import android.content.Intent;
@@ -23,6 +23,10 @@ import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.Volley;
+import com.codeslayers.hack.travelcheap.R;
+import com.codeslayers.hack.travelcheap.Model.Route;
+import com.codeslayers.hack.travelcheap.Adapter.RouteAdapter;
+import com.codeslayers.hack.travelcheap.Model.Step;
 import com.google.android.gms.common.GooglePlayServicesNotAvailableException;
 import com.google.android.gms.common.GooglePlayServicesRepairableException;
 import com.google.android.gms.common.api.GoogleApiClient;
@@ -57,28 +61,29 @@ import java.util.Map;
 
 public class MainActivity extends AppCompatActivity implements OnMapReadyCallback {
 
-    int PLACE_AUTOCOMPLETE_REQUEST_CODE1 = 1;
-    int PLACE_AUTOCOMPLETE_REQUEST_CODE2 = 2;
-
     private RequestQueue requestQueue;
     private String url, uberUrl;
     private ArrayList<Route> routes;
     private Route autoRoute;
-    ArrayList<Polyline> polylines;
+    private ArrayList<Polyline> polylines;
     private Marker m1,m2;
-    double startLatitude;
+    private double startLatitude;
     private Polyline drivingPolyline;
     private RouteAdapter routeAdapter;
     private RecyclerView recyclerView;
-    double startLongitude;
-    double endLatitude;
-    double endLongitude;
+    private double startLongitude;
+    private double endLatitude;
+    private double endLongitude;
     private TextView e1, e2;
     private GoogleMap mMap;
     private GoogleApiClient mGoogleApiClient;
     private LatLng latLng;
     private LocationManager locationManager;
+
     private static final int REQUEST_CALL_LOCATION = 100;
+    private static final int PLACE_AUTOCOMPLETE_REQUEST_CODE1 = 1;
+    private static final int PLACE_AUTOCOMPLETE_REQUEST_CODE2 = 2;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {

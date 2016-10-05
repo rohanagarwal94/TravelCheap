@@ -1,9 +1,11 @@
-package com.codeslayers.hack.travelcheap;
+package com.codeslayers.hack.travelcheap.ViewHolder;
 
 import android.support.v7.widget.RecyclerView;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
+
+import com.codeslayers.hack.travelcheap.R;
 
 /**
  * Created by mukulsoftwap on 9/23/2016.

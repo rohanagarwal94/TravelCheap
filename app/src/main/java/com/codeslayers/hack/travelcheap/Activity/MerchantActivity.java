@@ -1,4 +1,4 @@
-package com.codeslayers.hack.travelcheap;
+package com.codeslayers.hack.travelcheap.Activity;
 
 import android.app.Activity;
 import android.net.Uri;
@@ -9,6 +9,7 @@ import android.view.WindowManager;
 import android.widget.EditText;
 import android.widget.Toast;
 
+import com.codeslayers.hack.travelcheap.R;
 import com.google.android.gms.appindexing.Action;
 import com.google.android.gms.appindexing.AppIndex;
 import com.google.android.gms.appindexing.Thing;

@@ -1,9 +1,13 @@
-package com.codeslayers.hack.travelcheap;
+package com.codeslayers.hack.travelcheap.Adapter;
 
 import android.content.Context;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.ViewGroup;
+
+import com.codeslayers.hack.travelcheap.R;
+import com.codeslayers.hack.travelcheap.ViewHolder.RecyclerViewHolder;
+import com.codeslayers.hack.travelcheap.Model.Step;
 
 import java.util.ArrayList;
 

@@ -1,9 +1,8 @@
-package com.codeslayers.hack.travelcheap;
+package com.codeslayers.hack.travelcheap.Model;
 
 import android.os.Parcel;
 import android.os.Parcelable;
 
-import java.io.Serializable;
 import java.util.ArrayList;
 
 /**

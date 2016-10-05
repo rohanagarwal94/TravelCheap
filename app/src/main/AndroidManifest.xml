@@ -29,7 +29,7 @@
             android:value="AIzaSyBMmstnG_pn__ykktiqCT1lb4fOSFdaF6w"/>
 
 
-        <activity android:name=".MainActivity">
+        <activity android:name=".Activity.MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -37,8 +37,8 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".FareListActivity"></activity>
-        <activity android:name=".MerchantActivity"></activity>
+        <activity android:name=".Activity.FareListActivity"></activity>
+        <activity android:name=".Activity.MerchantActivity"></activity>
         <activity android:name="com.paytm.pgsdk.PaytmPGActivity"
             android:screenOrientation="portrait" android:configChanges="keyboardHidden|orientation|keyboard"/>
 

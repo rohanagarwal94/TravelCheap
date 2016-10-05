@@ -1,10 +1,11 @@
-package com.codeslayers.hack.travelcheap;
+package com.codeslayers.hack.travelcheap.Activity;
 
 import android.app.Activity;
 import android.os.Bundle;
-import android.support.v7.widget.DefaultItemAnimator;
-import android.support.v7.widget.LinearLayoutManager;
-import android.support.v7.widget.RecyclerView;
+
+import com.codeslayers.hack.travelcheap.R;
+import com.codeslayers.hack.travelcheap.Model.Route;
+import com.codeslayers.hack.travelcheap.Model.Step;
 
 import java.util.ArrayList;
 
@@ -17,6 +18,7 @@ public class FareListActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.farelist);
+
         Bundle extras = getIntent().getExtras();
         System.out.println("new activity");
         ArrayList<Route> routes= extras.getParcelableArrayList("routes");
