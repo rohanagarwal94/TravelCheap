@@ -40,6 +40,7 @@ public class RecyclerView_Adapter extends RecyclerView.Adapter<RecyclerViewHolde
         }else if(model.getMode().contains("Bus")){
             mainHolder.image.setImageDrawable(context.getResources().getDrawable(R.drawable.bus));
         }else if(model.getMode().contains("Metro")){
+            mainHolder.fare.setText("Rs. 25");
             mainHolder.image.setImageDrawable(context.getResources().getDrawable(R.drawable.metro));
         }
         if(position%2==0){

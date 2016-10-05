@@ -9,23 +9,12 @@ import android.location.Location;
 import android.location.LocationManager;
 import android.os.Bundle;
 import android.support.v4.app.ActivityCompat;
-import android.support.v4.app.Fragment;
-import android.content.res.AssetManager;
 import android.support.v7.app.AppCompatActivity;
-import android.os.Bundle;
+import android.support.v7.widget.DefaultItemAnimator;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.util.Log;
-import android.view.LayoutInflater;
-import android.view.Menu;
-import android.view.MenuInflater;
-import android.view.MenuItem;
 import android.view.View;
-import android.view.ViewGroup;
-import android.view.inputmethod.InputMethodManager;
-import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
-import android.widget.AutoCompleteTextView;
-import android.widget.Button;
-import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -76,11 +65,12 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     private String url, uberUrl;
     private ArrayList<Route> routes;
     private Route autoRoute;
-    private Button b1;
     ArrayList<Polyline> polylines;
     private Marker m1,m2;
     double startLatitude;
     Polyline drivingPolyline;
+    private RouteAdapter routeAdapter;
+    private RecyclerView recyclerView;
     double startLongitude;
     double endLatitude;
     double endLongitude;
@@ -97,8 +87,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        b1=(Button)findViewById(R.id.button6);
-
 
         polylines=new ArrayList<>();
         if (mGoogleApiClient == null) {
@@ -113,6 +101,10 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         e1 = (TextView) findViewById(R.id.source);
         e2 = (TextView) findViewById(R.id.destination);
+        recyclerView=(RecyclerView) findViewById(R.id.recycler_view2);
+        RecyclerView.LayoutManager mLayoutManager = new LinearLayoutManager(getApplicationContext());
+        recyclerView.setLayoutManager(mLayoutManager);
+        recyclerView.setItemAnimator(new DefaultItemAnimator());
 
         e1.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -132,33 +124,32 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             }
         });
 
-        b1.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-
-
-                Toast.makeText(getApplicationContext(),"Paytm transaction done",Toast.LENGTH_SHORT).show();
-                Intent i= new Intent(getApplicationContext(),FareListActivity.class);
+//        b1.setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View v) {
+//
+//
+//                Intent i= new Intent(getApplicationContext(),FareListActivity.class);
+////                Bundle bundle=new Bundle();
+////                bundle.putParcelableArrayList("routes",routes);
+////                i.putExtras(bundle);
+//
+//                float min=Integer.MAX_VALUE;
+//                int index=0;
+//                for(int j=0;j<routes.size();j++){
+//                    if(routes.get(j).getFare()<min) {
+//                        min=routes.get(j).getFare();
+//                        index = j;
+//                    }
+//                }
+//                System.out.println("min fare "+routes.get(index).getFare());
+//                ArrayList<Step> steps=routes.get(index).getSteps();
 //                Bundle bundle=new Bundle();
-//                bundle.putParcelableArrayList("routes",routes);
+//                bundle.putParcelableArrayList("steps",steps);
 //                i.putExtras(bundle);
-
-                float min=Integer.MAX_VALUE;
-                int index=0;
-                for(int j=0;j<routes.size();j++){
-                    if(routes.get(j).getFare()<min) {
-                        min=routes.get(j).getFare();
-                        index = j;
-                    }
-                }
-                System.out.println("min fare "+routes.get(index).getFare());
-                ArrayList<Step> steps=routes.get(index).getSteps();
-                Bundle bundle=new Bundle();
-                bundle.putParcelableArrayList("steps",steps);
-                i.putExtras(bundle);
-                startActivity(i);
-            }
-        });
+//                startActivity(i);
+//            }
+//        });
 
         e2.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -180,6 +171,77 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         routes=new ArrayList<>();
         autoRoute=new Route();
+
+        routeAdapter = new RouteAdapter(this, routes);
+
+        recyclerView.setAdapter(routeAdapter);
+
+
+    }
+
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (requestCode == PLACE_AUTOCOMPLETE_REQUEST_CODE1) {
+            if (resultCode == RESULT_OK) {
+                Place place = PlaceAutocomplete.getPlace(this, data);
+                e1.setText(place.getName());
+                startLatitude=place.getLatLng().latitude;
+                startLongitude=place.getLatLng().longitude;
+                if(!e1.getText().toString().equals("")&&!e2.getText().toString().equals(""))
+                    callApis(e1.getText().toString().replace(" ",""),e2.getText().toString().replace(" ",""));
+                initCamera(place.getLatLng());
+                if(m1!=null || m2!=null)
+                {
+                    m1.remove();
+                    m2.remove();
+                }
+                m1= mMap.addMarker(new MarkerOptions()
+                        .position(place.getLatLng())
+                );
+                Log.i("Place name", "Place: " + place.getName());
+            } else if (resultCode == PlaceAutocomplete.RESULT_ERROR) {
+                Status status = PlaceAutocomplete.getStatus(this, data);
+                // TODO: Handle the error.
+                Log.i("status message", status.getStatusMessage());
+
+            } else if (resultCode == RESULT_CANCELED) {
+                // The user canceled the operation.
+            }
+        } else if (requestCode == PLACE_AUTOCOMPLETE_REQUEST_CODE2) {
+            if (resultCode == RESULT_OK) {
+                Place place = PlaceAutocomplete.getPlace(this, data);
+                e2.setText(place.getName());
+                endLatitude=place.getLatLng().latitude;
+                endLongitude=place.getLatLng().longitude;
+                if(!e1.getText().toString().equals("")&&!e2.getText().toString().equals(""))
+                    callApis(e1.getText().toString().replace(" ",""),e2.getText().toString().replace(" ",""));
+
+                //zoom out the map
+                if(m2!=null)
+                    m2.remove();
+                m2=mMap.addMarker(new MarkerOptions()
+                        .position(place.getLatLng())
+                );
+                LatLngBounds.Builder builder = new LatLngBounds.Builder();
+
+                builder.include(m1.getPosition());
+                builder.include(m2.getPosition());
+
+                LatLngBounds bounds = builder.build();
+                CameraUpdate cu = CameraUpdateFactory.newLatLngBounds(bounds, 90);
+                mMap.moveCamera(cu);
+
+                Log.i("Place name", "Place: " + place.getName());
+            } else if (resultCode == PlaceAutocomplete.RESULT_ERROR) {
+                Status status = PlaceAutocomplete.getStatus(this, data);
+                // TODO: Handle the error.
+                Log.i("status message", status.getStatusMessage());
+
+            } else if (resultCode == RESULT_CANCELED) {
+                // The user canceled the operation.
+            }
+        }
     }
 
     private List<LatLng> decodePoly(String encoded) {
@@ -604,69 +666,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     }
 
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        if (requestCode == PLACE_AUTOCOMPLETE_REQUEST_CODE1) {
-            if (resultCode == RESULT_OK) {
-                Place place = PlaceAutocomplete.getPlace(this, data);
-                e1.setText(place.getName());
-                startLatitude=place.getLatLng().latitude;
-                startLongitude=place.getLatLng().longitude;
-                if(!e1.getText().toString().equals("")&&!e2.getText().toString().equals(""))
-                    callApis(e1.getText().toString().replace(" ",""),e2.getText().toString().replace(" ",""));
-                initCamera(place.getLatLng());
-                if(m1!=null || m2!=null)
-                {
-                    m1.remove();
-                    m2.remove();
-                }
-                m1= mMap.addMarker(new MarkerOptions()
-                        .position(place.getLatLng())
-                );
-                Log.i("Place name", "Place: " + place.getName());
-            } else if (resultCode == PlaceAutocomplete.RESULT_ERROR) {
-                Status status = PlaceAutocomplete.getStatus(this, data);
-                // TODO: Handle the error.
-                Log.i("status message", status.getStatusMessage());
-
-            } else if (resultCode == RESULT_CANCELED) {
-                // The user canceled the operation.
-            }
-        } else if (requestCode == PLACE_AUTOCOMPLETE_REQUEST_CODE2) {
-            if (resultCode == RESULT_OK) {
-                Place place = PlaceAutocomplete.getPlace(this, data);
-                e2.setText(place.getName());
-                endLatitude=place.getLatLng().latitude;
-                endLongitude=place.getLatLng().longitude;
-                if(!e1.getText().toString().equals("")&&!e2.getText().toString().equals(""))
-                    callApis(e1.getText().toString().replace(" ",""),e2.getText().toString().replace(" ",""));
-
-                //zoom out the map
-                if(m2!=null)
-                    m2.remove();
-                m2=mMap.addMarker(new MarkerOptions()
-                        .position(place.getLatLng())
-                );
-                LatLngBounds.Builder builder = new LatLngBounds.Builder();
-
-                builder.include(m1.getPosition());
-                builder.include(m2.getPosition());
-
-                LatLngBounds bounds = builder.build();
-                CameraUpdate cu = CameraUpdateFactory.newLatLngBounds(bounds, 90);
-                mMap.moveCamera(cu);
-
-                Log.i("Place name", "Place: " + place.getName());
-            } else if (resultCode == PlaceAutocomplete.RESULT_ERROR) {
-                Status status = PlaceAutocomplete.getStatus(this, data);
-                // TODO: Handle the error.
-                Log.i("status message", status.getStatusMessage());
-
-            } else if (resultCode == RESULT_CANCELED) {
-                // The user canceled the operation.
-            }
-        }
-    }
 
     private Location getLastKnownLocation() {
         List<String> providers = locationManager.getProviders(true);
@@ -720,6 +719,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 //        double endLatitude=28.5921452;
 //        double endLongitude=77.0460772;
         getUberRouteAndFare(uberRoute,startLatitude,startLongitude, endLatitude, endLongitude);
+        routeAdapter.notifyDataSetChanged();
     }
 
     protected void onStop() {
