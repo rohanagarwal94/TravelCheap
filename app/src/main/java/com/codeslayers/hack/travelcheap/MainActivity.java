@@ -135,8 +135,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         b1.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                
 
+
+                Toast.makeText(getApplicationContext(),"Paytm transaction done",Toast.LENGTH_SHORT).show();
                 Intent i= new Intent(getApplicationContext(),FareListActivity.class);
 //                Bundle bundle=new Bundle();
 //                bundle.putParcelableArrayList("routes",routes);
