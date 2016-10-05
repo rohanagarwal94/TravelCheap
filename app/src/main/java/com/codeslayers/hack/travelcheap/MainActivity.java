@@ -75,32 +75,26 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     private RequestQueue requestQueue;
     private String url, uberUrl;
     private ArrayList<Route> routes;
-    private Route autoRoute;
-    private Button b1;
-    ArrayList<Polyline> polylines;
+    private Polyline drivingPolyline;
     private Marker m1,m2;
     double startLatitude;
-    Polyline drivingPolyline;
     double startLongitude;
     double endLatitude;
     double endLongitude;
     private TextView e1, e2;
+    private Button b1;
+    private ArrayList<Polyline> polylines;
     private GoogleMap mMap;
     private GoogleApiClient mGoogleApiClient;
     private LatLng latLng;
     private LocationManager locationManager;
     private static final int REQUEST_CALL_LOCATION = 100;
 
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        b1=(Button)findViewById(R.id.button6);
-
-
-        polylines=new ArrayList<>();
         if (mGoogleApiClient == null) {
             mGoogleApiClient = new GoogleApiClient.Builder(getApplicationContext())
                     .addApi(LocationServices.API)
@@ -132,34 +126,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             }
         });
 
-        b1.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-
-
-                Toast.makeText(getApplicationContext(),"Paytm transaction done",Toast.LENGTH_SHORT).show();
-                Intent i= new Intent(getApplicationContext(),FareListActivity.class);
-//                Bundle bundle=new Bundle();
-//                bundle.putParcelableArrayList("routes",routes);
-//                i.putExtras(bundle);
-
-                float min=Integer.MAX_VALUE;
-                int index=0;
-                for(int j=0;j<routes.size();j++){
-                    if(routes.get(j).getFare()<min) {
-                        min=routes.get(j).getFare();
-                        index = j;
-                    }
-                }
-                System.out.println("min fare "+routes.get(index).getFare());
-                ArrayList<Step> steps=routes.get(index).getSteps();
-                Bundle bundle=new Bundle();
-                bundle.putParcelableArrayList("steps",steps);
-                i.putExtras(bundle);
-                startActivity(i);
-            }
-        });
-
         e2.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -177,9 +143,29 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 }
             }
         });
-
+        polylines=new ArrayList<>();
         routes=new ArrayList<>();
-        autoRoute=new Route();
+        b1=(Button)findViewById(R.id.button6);
+        b1.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
+                Intent i= new Intent(getApplicationContext(),FareListActivity.class);
+
+//                float min=Integer.MAX_VALUE;
+//                int index=0;
+//                for(int j=0;j<routes.size();j++){
+//                    if(routes.get(j).getFare()<min) {
+//                        min=routes.get(j).getFare();
+//                        index = j;
+//                    }
+//                }
+                Bundle bundle=new Bundle();
+                bundle.putParcelableArrayList("routes",routes);
+                i.putExtras(bundle);
+                startActivity(i);
+            }
+        });
     }
 
     private List<LatLng> decodePoly(String encoded) {
@@ -224,9 +210,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                     @Override
                     public void onResponse(JSONObject response) {
                         try{
-                            System.out.println(response.toString());
                             JSONArray routesArray = response.getJSONArray("routes");
-                            System.out.println(routesArray.length());
                             if(routesArray.length()==0)
                                 return;
                             JSONObject routeObject=routesArray.getJSONObject(0);
@@ -241,6 +225,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                                     .color(Color.parseColor(color))//Google maps red color
                                     .geodesic(true)
                             );
+
                             JSONArray legs = routeObject.getJSONArray("legs");
                             JSONObject jsonObject = legs.getJSONObject(0);
                             String startAddress=jsonObject.getString("start_address");
@@ -250,6 +235,11 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                             JSONObject distance = jsonObject.getJSONObject("distance");
                             int durationValue=duration.getInt("value");
                             int distanceValue=distance.getInt("value");
+                            Route autoRoute=new Route();
+                            Route uberRoute=new Route();
+                            uberRoute.setStartAddress(startAddress);
+                            uberRoute.setEndAddress(endAddress);
+                            getUberRouteAndFare(uberRoute,startLatitude,startLongitude, endLatitude, endLongitude);
                             autoRoute.setFare(getAutoFare(distanceValue));
                             autoRoute.setEndAddress(endAddress);
                             autoRoute.setStartAddress(startAddress);
@@ -257,6 +247,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                             autoRoute.setDistance(distanceValue);
                             autoRoute.setMode("auto");
                             routes.add(autoRoute);
+
+                            System.out.println("Route from "+startAddress+" to "+endAddress+" via uber");
 
                         }catch(JSONException e){e.printStackTrace();}
                     }
@@ -283,7 +275,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     }
 
-    public void getRoute(final String mode, String url, final String color,final int index){
+    public void getRoute(final String mode, String url, final String color){
         requestQueue = Volley.newRequestQueue(MainActivity.this);
 
         JsonObjectRequest jor = new JsonObjectRequest(url, null,
@@ -291,9 +283,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                     @Override
                     public void onResponse(JSONObject response) {
                         try{
-                            System.out.println(response.toString());
                             JSONArray routesArray = response.getJSONArray("routes");
-                            System.out.println(routesArray.length());
                             if(routesArray.length()==0)
                                 return;
                             JSONObject routeObject=routesArray.getJSONObject(0);
@@ -307,7 +297,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                                 polyline2.remove();
                                 polylines.clear();
                             }
-
                             Polyline polyline = mMap.addPolyline(new PolylineOptions()
                                     .addAll(list)
                                     .width(12)
@@ -316,24 +305,18 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                             );
                             polylines.add(polyline);
                             JSONArray legs = routeObject.getJSONArray("legs");
-                            System.out.println("legs "+legs.length());
                             Route route=new Route();
                             JSONObject jsonObject = legs.getJSONObject(0);
                             String startAddress=jsonObject.getString("start_address");
                             String endAddress=jsonObject.getString("end_address");
-                            System.out.println("Route from "+startAddress+" to "+endAddress);
+                            System.out.println("Route from "+startAddress+" to "+endAddress+" via "+mode);
                             JSONObject duration=jsonObject.getJSONObject("duration");
                             JSONObject distance = jsonObject.getJSONObject("distance");
                             int durationValue=duration.getInt("value");
                             int distanceValue=distance.getInt("value");
-                            autoRoute.setFare(getAutoFare(distanceValue));
-                            autoRoute.setEndAddress(endAddress);
-                            autoRoute.setStartAddress(startAddress);
-                            autoRoute.setDuration(durationValue);
-                            autoRoute.setDistance(distanceValue);
                             route.setDistance(distanceValue);
                             route.setDuration(durationValue);
-                            route.setEndAddress(startAddress);
+                            route.setStartAddress(startAddress);
                             route.setEndAddress(endAddress);
                             float routeFare=0;
                             JSONArray steps = jsonObject.getJSONArray("steps");
@@ -377,11 +360,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                                 routeFare=routeFare+stepFare;
                                 Step step=new Step(departureName,arrivalName,type,durationValue1,distanceValue1,stepFare);
                                 route.addStep(step);
-                                System.out.println(departureName+" to "+arrivalName+" via "+type+" price "+stepFare);
                             }
                             if(mode.equals("metro")){
                                 routeFare=routeFare + getMetroFare(route.getSteps());
-                                System.out.println("Route from "+startAddress+" to "+endAddress);
                             }
                             route.setFare(routeFare);
                             route.setMode(mode);
@@ -423,7 +404,37 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         }
     }
 
-    public void getUberRouteAndFare(final Route route, double startLatitude, double startLongitude, double endLatitude, double endLongitude) {
+    @Override
+    protected void onStart() {
+        mGoogleApiClient.connect();
+        super.onStart();
+    }
+
+    private void initCamera(LatLng latlng) {
+        CameraPosition position = CameraPosition.builder()
+                .target(latlng)
+                .zoom(18f)
+                .bearing(0.0f)
+                .tilt(40f)
+                .build();
+
+        mMap.animateCamera(CameraUpdateFactory.newCameraPosition(position), null);
+
+        mMap.setMapType(GoogleMap.MAP_TYPE_NORMAL);
+        mMap.setTrafficEnabled(true);
+        int permission = ActivityCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.ACCESS_FINE_LOCATION);
+        if (permission != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(
+                    MainActivity.this,
+                    new String[]{Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION},
+                    REQUEST_CALL_LOCATION);
+        }
+        mMap.setMyLocationEnabled(true);
+        mMap.getUiSettings().setZoomControlsEnabled(true);
+    }
+
+    public void getUberRouteAndFare(final Route route, double startLatitude, double startLongitude,
+                                    double endLatitude, double endLongitude) {
         requestQueue = Volley.newRequestQueue(MainActivity.this);
         uberUrl="https://api.uber.com/v1/estimates/price?start_latitude="+startLatitude+"&start_longitude="+startLongitude+"&end_latitude="+endLatitude+"&end_longitude="+endLongitude;
         JsonObjectRequest jor = new JsonObjectRequest(uberUrl, null,
@@ -431,7 +442,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                     @Override
                     public void onResponse(JSONObject response) {
                         try{
-                            System.out.println(response.toString());
                             JSONArray prices=response.getJSONArray("prices");
                             if(prices.length()==0)
                                 return;
@@ -439,8 +449,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                             int minIndex=0;
                             for(int i=0;i<prices.length();i++){
                                 JSONObject jsonObject=prices.getJSONObject(i);
-                                if(jsonObject.getString("localized_display_name").equals("uberPOOL"))
-                                    continue;
                                 int value=jsonObject.getInt("low_estimate");
                                 if(value<min) {
                                     min = value;
@@ -484,12 +492,11 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         String arrivalName="";
         String departureName="";
-        System.out.println("size of metro steps "+steps.size());
         int i=0;
         for(;i<steps.size();i++){
             if(steps.get(i).getMode().contains("Metro")) {
                 arrivalName = steps.get(i).getSource();
-                System.out.println(arrivalName+"here");
+                System.out.println(arrivalName+" starting metro journey");
                 break;
             }
         }
@@ -497,7 +504,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         for(i=steps.size()-1;i>=0;i--) {
             if (steps.get(i).getMode().contains("Metro")) {
                 departureName = steps.get(i).getDestination();
-                System.out.println(departureName+"there");
+                System.out.println(departureName+" ending metro journey");
                 break;
             }
         }
@@ -538,11 +545,13 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 if(arrivalFlag&&departureFlag)
                     break;
             }
-            if(deparureId==0||arrivalId==0)
+            if(deparureId==0||arrivalId==0) {
+                System.out.println("no metro is present in the route.");
                 return fare;
+            }
             JSONObject fareObject=metroArray.getJSONObject(deparureId);
             fare=fareObject.getInt(""+arrivalId);
-            System.out.println(fare);
+            System.out.println("fare is "+fare);
         } catch (JSONException e) {
             e.printStackTrace();
             return fare;
@@ -571,37 +580,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         }
         System.out.println("auto "+fare);
         return fare;
-    }
-
-    @Override
-    protected void onStart() {
-        mGoogleApiClient.connect();
-        super.onStart();
-    }
-
-    private void initCamera(LatLng latlng) {
-        CameraPosition position = CameraPosition.builder()
-                .target(latlng)
-                .zoom(18f)
-                .bearing(0.0f)
-                .tilt(40f)
-                .build();
-
-        mMap.animateCamera(CameraUpdateFactory.newCameraPosition(position), null);
-
-        mMap.setMapType(GoogleMap.MAP_TYPE_NORMAL);
-        mMap.setTrafficEnabled(true);
-        int permission = ActivityCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.ACCESS_FINE_LOCATION);
-        if (permission != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(
-                    MainActivity.this,
-                    new String[]{Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION},
-                    REQUEST_CALL_LOCATION);
-        }
-        mMap.setMyLocationEnabled(true);
-        mMap.getUiSettings().setZoomControlsEnabled(true);
-        mMap.getUiSettings().setMyLocationButtonEnabled(true);
-
     }
 
     @Override
@@ -638,6 +616,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 e2.setText(place.getName());
                 endLatitude=place.getLatLng().latitude;
                 endLongitude=place.getLatLng().longitude;
+
                 if(!e1.getText().toString().equals("")&&!e2.getText().toString().equals(""))
                     callApis(e1.getText().toString().replace(" ",""),e2.getText().toString().replace(" ",""));
 
@@ -653,6 +632,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 builder.include(m2.getPosition());
 
                 LatLngBounds bounds = builder.build();
+
                 CameraUpdate cu = CameraUpdateFactory.newLatLngBounds(bounds, 90);
                 mMap.moveCamera(cu);
 
@@ -700,29 +680,21 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         routes.clear();
         String color="#6A1B9A";
         String url="https://maps.googleapis.com/maps/api/directions/json?origin="+source+"&destination="+destination+"&mode=transit&transit_mode=rail&key=AIzaSyDuZ2e5qarM-fhwOoAS4WNum1k1Ow2lhLs";
-        getRoute("metro",url,color,0);
+        getRoute("metro",url,color);
 
         color="#5D4037";
         url="https://maps.googleapis.com/maps/api/directions/json?origin="+source+"&destination="+destination+"&mode=transit&transit_mode=bus&key=AIzaSyDuZ2e5qarM-fhwOoAS4WNum1k1Ow2lhLs";
-        getRoute("bus",url,color,1);
+        getRoute("bus",url,color);
 
         url="https://maps.googleapis.com/maps/api/directions/json?origin="+source+"&destination="+destination+"&mode=driving&key=AIzaSyDuZ2e5qarM-fhwOoAS4WNum1k1Ow2lhLs";
         color="#E53935";
         getDrivingRoute(url,color);
 
-        routes.add(autoRoute);
-        autoRoute.setMode("auto");
-        Route uberRoute=new Route();
-        uberRoute.setStartAddress(autoRoute.getStartAddress());
-        uberRoute.setEndAddress(autoRoute.getEndAddress());
-//        double startLatitude=28.6374378;
-//        double startLongitude=77.2927347;
-//        double endLatitude=28.5921452;
-//        double endLongitude=77.0460772;
-        getUberRouteAndFare(uberRoute,startLatitude,startLongitude, endLatitude, endLongitude);
     }
 
     protected void onStop() {
         mGoogleApiClient.disconnect();
         super.onStop();
-    }}
+    }
+
+}
