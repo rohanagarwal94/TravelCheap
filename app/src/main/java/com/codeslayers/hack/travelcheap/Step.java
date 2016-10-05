@@ -3,13 +3,11 @@ package com.codeslayers.hack.travelcheap;
 import android.os.Parcel;
 import android.os.Parcelable;
 
-
-
 /**
  * Created by lenovo on 01/10/2016.
  */
 
-public class Step implements Parcelable {
+public class Step implements Parcelable{
     private String source;
     private String destination;
     private String mode;

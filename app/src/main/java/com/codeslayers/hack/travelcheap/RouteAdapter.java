@@ -49,24 +49,6 @@ public class RouteAdapter extends RecyclerView.Adapter<RouteAdapter.MyViewHolder
             timestamp = (TextView) view
                     .findViewById(R.id.duration1);
 
-//            getComments.setOnClickListener(new View.OnClickListener() {
-//                @Override
-//                public void onClick(View v) {
-//                    FeedItem forComment=feedItems.get(getPosition());
-////                    FeedItem forComment=feedItems.get(getAdapterPosition());   //Test this
-//                    commentItems = new ArrayList<>();
-//                    if(forComment.getCommentsSize()!=0) {
-//                        commentItems.addAll(forComment.getCommentItems());
-//                    }
-//                    if(commentItems.size()!=0)
-////                        showDialog(v);     //This is ins
-//                        mAdapterCallback.onMethodCallback(commentItems);
-//                    else
-//                        Snackbar.make(v, "No Comments Yet :(", Snackbar.LENGTH_SHORT)
-//                                .setAction("Action", null).show();
-//
-//                }
-//            });
         }
     }
 

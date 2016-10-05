@@ -13,18 +13,22 @@ import java.util.ArrayList;
  */
 
 public class FareListActivity extends Activity {
-    private RecyclerView recyclerView;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.farelist);
         Bundle extras = getIntent().getExtras();
-        ArrayList<Step> fareData= extras.getParcelableArrayList("steps");
-        recyclerView = (RecyclerView) findViewById(R.id.recycler_view);
-        recyclerView.setHasFixedSize(true);
-        recyclerView.setLayoutManager(new LinearLayoutManager(this, LinearLayoutManager.VERTICAL, false));
-        RecyclerView_Adapter adapter = new RecyclerView_Adapter(this, fareData);
-        recyclerView.setItemAnimator(new DefaultItemAnimator());
-        recyclerView.setAdapter(adapter);
+        System.out.println("new activity");
+        ArrayList<Route> routes= extras.getParcelableArrayList("routes");
+        System.out.println("no of routes are "+routes.size());
+        for(int i=0;i<routes.size();i++){
+            Route route=routes.get(i);
+            System.out.println(route.getStartAddress()+" to "+route.getEndAddress()+" by "+route.getMode()+" "+route.getFare());
+            ArrayList<Step> steps=route.getSteps();
+            for(int j=0;j<steps.size();j++){
+                Step step=steps.get(j);
+                System.out.println(step.getMode()+" "+step.getFare());
+            }
+        }
     }
 }

@@ -18,15 +18,14 @@ public class Route implements Parcelable{
     private int distance;
     private float fare;
 
-
     protected Route(Parcel in) {
+        steps = in.createTypedArrayList(Step.CREATOR);
         startAddress = in.readString();
         endAddress = in.readString();
         duration = in.readInt();
         distance = in.readInt();
         fare = in.readFloat();
         mode = in.readString();
-        steps=in.readArrayList(null);
     }
 
     public static final Creator<Route> CREATOR = new Creator<Route>() {
@@ -65,6 +64,10 @@ public class Route implements Parcelable{
 
     public void setStartAddress(String startAddress) {
         this.startAddress = startAddress;
+    }
+
+    public void setSteps(ArrayList<Step> steps) {
+        this.steps = steps;
     }
 
     public String getEndAddress() {
@@ -110,12 +113,12 @@ public class Route implements Parcelable{
 
     @Override
     public void writeToParcel(Parcel dest, int flags) {
+        dest.writeTypedList(steps);
         dest.writeString(startAddress);
         dest.writeString(endAddress);
         dest.writeInt(duration);
         dest.writeInt(distance);
         dest.writeFloat(fare);
         dest.writeString(mode);
-        dest.writeList(steps);
     }
 }

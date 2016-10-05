@@ -1,7 +1,6 @@
 package com.codeslayers.hack.travelcheap;
 
 import android.Manifest;
-import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
@@ -68,7 +67,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     ArrayList<Polyline> polylines;
     private Marker m1,m2;
     double startLatitude;
-    Polyline drivingPolyline;
+    private Polyline drivingPolyline;
     private RouteAdapter routeAdapter;
     private RecyclerView recyclerView;
     double startLongitude;
@@ -81,12 +80,10 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     private LocationManager locationManager;
     private static final int REQUEST_CALL_LOCATION = 100;
 
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
 
         polylines=new ArrayList<>();
         if (mGoogleApiClient == null) {
@@ -312,6 +309,11 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                             JSONObject distance = jsonObject.getJSONObject("distance");
                             int durationValue=duration.getInt("value");
                             int distanceValue=distance.getInt("value");
+                            Route autoRoute=new Route();
+                            Route uberRoute=new Route();
+                            uberRoute.setStartAddress(startAddress);
+                            uberRoute.setEndAddress(endAddress);
+                            getUberRouteAndFare(uberRoute,startLatitude,startLongitude, endLatitude, endLongitude);
                             autoRoute.setFare(getAutoFare(distanceValue));
                             autoRoute.setEndAddress(endAddress);
                             autoRoute.setStartAddress(startAddress);
@@ -319,6 +321,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                             autoRoute.setDistance(distanceValue);
                             autoRoute.setMode("auto");
                             routes.add(autoRoute);
+
+                            System.out.println("Route from "+startAddress+" to "+endAddress+" via uber");
 
                         }catch(JSONException e){e.printStackTrace();}
                     }
@@ -345,7 +349,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     }
 
-    public void getRoute(final String mode, String url, final String color,final int index){
+    public void getRoute(final String mode, String url, final String color){
         requestQueue = Volley.newRequestQueue(MainActivity.this);
 
         JsonObjectRequest jor = new JsonObjectRequest(url, null,
@@ -353,9 +357,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                     @Override
                     public void onResponse(JSONObject response) {
                         try{
-                            System.out.println(response.toString());
                             JSONArray routesArray = response.getJSONArray("routes");
-                            System.out.println(routesArray.length());
                             if(routesArray.length()==0)
                                 return;
                             JSONObject routeObject=routesArray.getJSONObject(0);
@@ -369,7 +371,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                                 polyline2.remove();
                                 polylines.clear();
                             }
-
                             Polyline polyline = mMap.addPolyline(new PolylineOptions()
                                     .addAll(list)
                                     .width(12)
@@ -378,24 +379,18 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                             );
                             polylines.add(polyline);
                             JSONArray legs = routeObject.getJSONArray("legs");
-                            System.out.println("legs "+legs.length());
                             Route route=new Route();
                             JSONObject jsonObject = legs.getJSONObject(0);
                             String startAddress=jsonObject.getString("start_address");
                             String endAddress=jsonObject.getString("end_address");
-                            System.out.println("Route from "+startAddress+" to "+endAddress);
+                            System.out.println("Route from "+startAddress+" to "+endAddress+" via "+mode);
                             JSONObject duration=jsonObject.getJSONObject("duration");
                             JSONObject distance = jsonObject.getJSONObject("distance");
                             int durationValue=duration.getInt("value");
                             int distanceValue=distance.getInt("value");
-                            autoRoute.setFare(getAutoFare(distanceValue));
-                            autoRoute.setEndAddress(endAddress);
-                            autoRoute.setStartAddress(startAddress);
-                            autoRoute.setDuration(durationValue);
-                            autoRoute.setDistance(distanceValue);
                             route.setDistance(distanceValue);
                             route.setDuration(durationValue);
-                            route.setEndAddress(startAddress);
+                            route.setStartAddress(startAddress);
                             route.setEndAddress(endAddress);
                             float routeFare=0;
                             JSONArray steps = jsonObject.getJSONArray("steps");
@@ -493,7 +488,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                     @Override
                     public void onResponse(JSONObject response) {
                         try{
-                            System.out.println(response.toString());
                             JSONArray prices=response.getJSONArray("prices");
                             if(prices.length()==0)
                                 return;
@@ -501,8 +495,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                             int minIndex=0;
                             for(int i=0;i<prices.length();i++){
                                 JSONObject jsonObject=prices.getJSONObject(i);
-                                if(jsonObject.getString("localized_display_name").equals("uberPOOL"))
-                                    continue;
                                 int value=jsonObject.getInt("low_estimate");
                                 if(value<min) {
                                     min = value;
@@ -546,12 +538,11 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         String arrivalName="";
         String departureName="";
-        System.out.println("size of metro steps "+steps.size());
         int i=0;
         for(;i<steps.size();i++){
             if(steps.get(i).getMode().contains("Metro")) {
                 arrivalName = steps.get(i).getSource();
-                System.out.println(arrivalName+"here");
+                System.out.println(arrivalName+" starting metro journey");
                 break;
             }
         }
@@ -559,7 +550,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         for(i=steps.size()-1;i>=0;i--) {
             if (steps.get(i).getMode().contains("Metro")) {
                 departureName = steps.get(i).getDestination();
-                System.out.println(departureName+"there");
+                System.out.println(departureName+" ending metro journey");
                 break;
             }
         }
@@ -600,11 +591,13 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 if(arrivalFlag&&departureFlag)
                     break;
             }
-            if(deparureId==0||arrivalId==0)
+            if(deparureId==0||arrivalId==0) {
+                System.out.println("no metro is present in the route.");
                 return fare;
+            }
             JSONObject fareObject=metroArray.getJSONObject(deparureId);
             fare=fareObject.getInt(""+arrivalId);
-            System.out.println(fare);
+            System.out.println("fare is "+fare);
         } catch (JSONException e) {
             e.printStackTrace();
             return fare;
@@ -699,11 +692,11 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         routes.clear();
         String color="#6A1B9A";
         String url="https://maps.googleapis.com/maps/api/directions/json?origin="+source+"&destination="+destination+"&mode=transit&transit_mode=rail&key=AIzaSyDuZ2e5qarM-fhwOoAS4WNum1k1Ow2lhLs";
-        getRoute("metro",url,color,0);
+        getRoute("metro",url,color);
 
         color="#5D4037";
         url="https://maps.googleapis.com/maps/api/directions/json?origin="+source+"&destination="+destination+"&mode=transit&transit_mode=bus&key=AIzaSyDuZ2e5qarM-fhwOoAS4WNum1k1Ow2lhLs";
-        getRoute("bus",url,color,1);
+        getRoute("bus",url,color);
 
         url="https://maps.googleapis.com/maps/api/directions/json?origin="+source+"&destination="+destination+"&mode=driving&key=AIzaSyDuZ2e5qarM-fhwOoAS4WNum1k1Ow2lhLs";
         color="#E53935";
@@ -714,15 +707,14 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         Route uberRoute=new Route();
         uberRoute.setStartAddress(autoRoute.getStartAddress());
         uberRoute.setEndAddress(autoRoute.getEndAddress());
-//        double startLatitude=28.6374378;
-//        double startLongitude=77.2927347;
-//        double endLatitude=28.5921452;
-//        double endLongitude=77.0460772;
         getUberRouteAndFare(uberRoute,startLatitude,startLongitude, endLatitude, endLongitude);
+        Log.d("routes",String.valueOf(routes.size()));
         routeAdapter.notifyDataSetChanged();
     }
 
     protected void onStop() {
         mGoogleApiClient.disconnect();
         super.onStop();
-    }}
+    }
+
+}
