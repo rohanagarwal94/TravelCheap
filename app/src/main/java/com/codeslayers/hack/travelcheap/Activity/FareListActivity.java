@@ -4,10 +4,6 @@ import android.app.Activity;
 import android.os.Bundle;
 
 import com.codeslayers.hack.travelcheap.R;
-import com.codeslayers.hack.travelcheap.Model.Route;
-import com.codeslayers.hack.travelcheap.Model.Step;
-
-import java.util.ArrayList;
 
 /**
  * Created by mukulsoftwap on 10/2/2016.
@@ -21,7 +17,7 @@ public class FareListActivity extends Activity {
 
         Bundle extras = getIntent().getExtras();
         System.out.println("new activity");
-        ArrayList<Route> routes= extras.getParcelableArrayList("routes");
+        /*ArrayList<Route> routes= extras.getParcelableArrayList("routes");
         System.out.println("no of routes are "+routes.size());
         for(int i=0;i<routes.size();i++){
             Route route=routes.get(i);
@@ -31,6 +27,6 @@ public class FareListActivity extends Activity {
                 Step step=steps.get(j);
                 System.out.println(step.getMode()+" "+step.getFare());
             }
-        }
+        }*/
     }
 }

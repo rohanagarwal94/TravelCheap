@@ -1,43 +1,18 @@
 package com.codeslayers.hack.travelcheap.Model;
 
-import android.os.Parcel;
-import android.os.Parcelable;
-
 import java.util.ArrayList;
 
 /**
  * Created by lenovo on 01/10/2016.
  */
 
-public class Route implements Parcelable{
+public class Route{
     private ArrayList<Step> steps;
     private String startAddress;
     private String endAddress;
     private int duration;
     private int distance;
     private float fare;
-
-    protected Route(Parcel in) {
-        steps = in.createTypedArrayList(Step.CREATOR);
-        startAddress = in.readString();
-        endAddress = in.readString();
-        duration = in.readInt();
-        distance = in.readInt();
-        fare = in.readFloat();
-        mode = in.readString();
-    }
-
-    public static final Creator<Route> CREATOR = new Creator<Route>() {
-        @Override
-        public Route createFromParcel(Parcel in) {
-            return new Route(in);
-        }
-
-        @Override
-        public Route[] newArray(int size) {
-            return new Route[size];
-        }
-    };
 
     public String getMode() {
         return mode;
@@ -105,19 +80,4 @@ public class Route implements Parcelable{
         steps.add(step);
     }
 
-    @Override
-    public int describeContents() {
-        return 0;
-    }
-
-    @Override
-    public void writeToParcel(Parcel dest, int flags) {
-        dest.writeTypedList(steps);
-        dest.writeString(startAddress);
-        dest.writeString(endAddress);
-        dest.writeInt(duration);
-        dest.writeInt(distance);
-        dest.writeFloat(fare);
-        dest.writeString(mode);
-    }
 }
