@@ -1,6 +1,7 @@
 package com.codeslayers.hack.travelcheap.Activity;
 
 import android.Manifest;
+import android.app.ProgressDialog;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
@@ -14,6 +15,7 @@ import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.View;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -67,10 +69,12 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     private Route autoRoute;
     private ArrayList<Polyline> polylines;
     private Marker m1,m2;
+    int apiCallCount;
     private double startLatitude;
     private Polyline drivingPolyline;
     private RouteAdapter routeAdapter;
     private RecyclerView recyclerView;
+    private ProgressDialog progressDialog;
     private double startLongitude;
     private double endLatitude;
     private double endLongitude;
@@ -103,7 +107,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         e1 = (TextView) findViewById(R.id.source);
         e2 = (TextView) findViewById(R.id.destination);
-        recyclerView=(RecyclerView) findViewById(R.id.recycler_view2);
+        recyclerView=(RecyclerView) findViewById(R.id.recycler_view);
         RecyclerView.LayoutManager mLayoutManager = new LinearLayoutManager(getApplicationContext());
         recyclerView.setLayoutManager(mLayoutManager);
         recyclerView.setItemAnimator(new DefaultItemAnimator());
@@ -181,6 +185,20 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     }
 
+    private void showProgressDialog(){
+        progressDialog=new ProgressDialog(MainActivity.this);
+        progressDialog.setTitle("Please wait.....");
+        progressDialog.setMessage("Fetching all routes....");
+        progressDialog.setCancelable(false);
+        progressDialog.setCanceledOnTouchOutside(false);
+        progressDialog.show();
+    }
+
+    private void hideProgressDialog(){
+        if(progressDialog!=null)
+            progressDialog.hide();
+        System.out.println("all apis calls are done");
+    }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
@@ -328,8 +346,16 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                             routes.add(autoRoute);
 
                             System.out.println("Route from "+startAddress+" to "+endAddress+" via uber");
+                            apiCallCount++;
+                            if(apiCallCount==4){
+                                hideProgressDialog();
+                            }
 
-                        }catch(JSONException e){e.printStackTrace();}
+                        }catch(JSONException e){e.printStackTrace();
+                            apiCallCount++;
+                            if(apiCallCount==4){
+                                hideProgressDialog();
+                            }}
                     }
                 },
                 new Response.ErrorListener() {
@@ -338,7 +364,10 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                         //progressDialog.dismiss();
                         Toast.makeText(getApplicationContext(),"Error in internet connection.",Toast.LENGTH_LONG).show();
                         Log.e("Volley",error.toString());
-
+                        apiCallCount++;
+                        if(apiCallCount==4){
+                            hideProgressDialog();
+                        }
                     }
                 }
         ){
@@ -449,7 +478,15 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                             route.setMode(mode);
                             routes.add(route);
                             System.out.println("route fare "+routeFare);
-                        }catch(JSONException e){e.printStackTrace();}
+                            apiCallCount++;
+                            if(apiCallCount==4){
+                                hideProgressDialog();
+                            }
+                        }catch(JSONException e){e.printStackTrace();
+                            apiCallCount++;
+                            if(apiCallCount==4){
+                                hideProgressDialog();
+                            }}
                     }
                 },
                 new Response.ErrorListener() {
@@ -458,7 +495,10 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                         //progressDialog.dismiss();
                         Toast.makeText(getApplicationContext(),"Error in internet connection.",Toast.LENGTH_LONG).show();
                         Log.e("Volley",error.toString());
-
+                        apiCallCount++;
+                        if(apiCallCount==4){
+                            hideProgressDialog();
+                        }
                     }
                 }
         ){
@@ -513,8 +553,16 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                             route.setMode("uber");
                             System.out.println((price.getInt("high_estimate")+price.getInt("low_estimate"))/2);
                             routes.add(route);
-
-                        }catch(JSONException e){e.printStackTrace();}
+                            apiCallCount++;
+                            if(apiCallCount==4){
+                                hideProgressDialog();
+                            }
+                        }catch(JSONException e){e.printStackTrace();
+                            apiCallCount++;
+                            if(apiCallCount==4){
+                                hideProgressDialog();
+                            }
+                        }
                     }
                 },
                 new Response.ErrorListener() {
@@ -523,7 +571,10 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
                         Toast.makeText(getApplicationContext(),"Error in loading all posts.",Toast.LENGTH_LONG).show();
                         Log.e("Volley",error.toString());
-
+                        apiCallCount++;
+                        if(apiCallCount==4){
+                            hideProgressDialog();
+                        }
                     }
                 }
         ){
@@ -664,7 +715,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     }
 
-
     private Location getLastKnownLocation() {
         List<String> providers = locationManager.getProviders(true);
         Location bestLocation = null;
@@ -695,6 +745,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     private void callApis(String source,String destination){
 
         routes.clear();
+        apiCallCount=0;
+        showProgressDialog();
         String color="#6A1B9A";
         String url="https://maps.googleapis.com/maps/api/directions/json?origin="+source+"&destination="+destination+"&mode=transit&transit_mode=rail&key=AIzaSyDuZ2e5qarM-fhwOoAS4WNum1k1Ow2lhLs";
         getRoute("metro",url,color);
