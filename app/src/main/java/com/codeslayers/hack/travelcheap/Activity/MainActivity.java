@@ -14,6 +14,7 @@ import android.support.v7.widget.DefaultItemAnimator;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
+import android.view.MotionEvent;
 import android.view.View;
 import android.widget.ProgressBar;
 import android.widget.TextView;
@@ -107,7 +108,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         e1 = (TextView) findViewById(R.id.source);
         e2 = (TextView) findViewById(R.id.destination);
-        recyclerView=(RecyclerView) findViewById(R.id.recycler_view);
+        recyclerView=(RecyclerView) findViewById(R.id.recycler_view11);
         RecyclerView.LayoutManager mLayoutManager = new LinearLayoutManager(getApplicationContext());
         recyclerView.setLayoutManager(mLayoutManager);
         recyclerView.setItemAnimator(new DefaultItemAnimator());
@@ -182,7 +183,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         recyclerView.setAdapter(routeAdapter);
 
-
     }
 
     private void showProgressDialog(){
@@ -195,8 +195,11 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
 
     private void hideProgressDialog(){
-        if(progressDialog!=null)
+        if(progressDialog!=null) {
             progressDialog.hide();
+            System.out.println("routes going are "+routes.size());
+            routeAdapter.notifyDataSetChanged();
+        }
         System.out.println("all apis calls are done");
     }
 
@@ -759,14 +762,14 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         color="#E53935";
         getDrivingRoute(url,color);
 
-        routes.add(autoRoute);
-        autoRoute.setMode("auto");
-        Route uberRoute=new Route();
-        uberRoute.setStartAddress(autoRoute.getStartAddress());
-        uberRoute.setEndAddress(autoRoute.getEndAddress());
-        getUberRouteAndFare(uberRoute,startLatitude,startLongitude, endLatitude, endLongitude);
-        Log.d("routes",String.valueOf(routes.size()));
-        routeAdapter.notifyDataSetChanged();
+//        routes.add(autoRoute);
+//        autoRoute.setMode("auto");
+//        Route uberRoute=new Route();
+//        uberRoute.setStartAddress(autoRoute.getStartAddress());
+//        uberRoute.setEndAddress(autoRoute.getEndAddress());
+//        getUberRouteAndFare(uberRoute,startLatitude,startLongitude, endLatitude, endLongitude);
+//        Log.d("routes",String.valueOf(routes.size()));
+//        routeAdapter.notifyDataSetChanged();
     }
 
     protected void onStop() {

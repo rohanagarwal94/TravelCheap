@@ -59,13 +59,16 @@
 
         <TextView
             android:layout_width="match_parent"
-            android:layout_height="67dp"
+            android:layout_height="75dp"
+            android:paddingTop="15dp"
             android:textAlignment="center"
-            android:background="@color/aqua"
+            android:textColor="#000000"
+            android:background="#B2EBF2"
+            android:textSize="25sp"
             android:text="@string/app_name"/>
 
     <android.support.v7.widget.RecyclerView
-        android:id="@+id/recycler_view"
+        android:id="@+id/recycler_view11"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_weight="1.6"

@@ -1,10 +1,10 @@
 package com.codeslayers.hack.travelcheap.Adapter;
 
+import android.content.Intent;
+import android.os.Bundle;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.ViewGroup;
-
-import java.util.ArrayList;
 
 /**
  * Created by mukulsoftwap on 9/23/2016.
@@ -14,8 +14,8 @@ import android.app.Activity;
 import android.view.View;
 import android.widget.TextView;
 
+import com.codeslayers.hack.travelcheap.Activity.FareListActivity;
 import com.codeslayers.hack.travelcheap.Model.Route;
-import com.codeslayers.hack.travelcheap.Model.Step;
 import com.codeslayers.hack.travelcheap.R;
 
 import java.util.List;
@@ -23,38 +23,53 @@ import java.util.List;
 public class RouteAdapter extends RecyclerView.Adapter<RouteAdapter.MyViewHolder> {
 
     private Activity activity;
-    private List<Route> feedItems;
-//    private AdapterCallback mAdapterCallback;
-    private ArrayList<Step> commentItems;
+    private List<Route> routes;
 
 
-    public class MyViewHolder extends RecyclerView.ViewHolder{
-        public TextView timestamp,statusMsg,url;
+    public class MyViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener{
+        public TextView mode,fare,duration;
 
         public MyViewHolder(View view) {
             super(view);
-            view.bringToFront();
-            timestamp = (TextView) view
-                    .findViewById(R.id.duration1);
+            view.setOnClickListener(this);
+            mode = (TextView) view.findViewById(R.id.mode);
+            fare = (TextView) view.findViewById(R.id.fare);
+            duration = (TextView) view.findViewById(R.id.duration);
+        }
 
+        @Override
+        public void onClick(View v) {
+            System.out.println("clicked");
+            int position=getAdapterPosition();
+            Intent intent=new Intent(activity, FareListActivity.class);
+            Bundle bundle=new Bundle();
+            bundle.putParcelable("route",routes.get(position));
+            intent.putExtras(bundle);
+            activity.startActivity(intent);
         }
     }
 
-    public RouteAdapter(Activity activity,List<Route> feedItems) {
-        this.feedItems=feedItems;
+    public RouteAdapter(Activity activity,List<Route> routes) {
+        this.routes = routes;
         this.activity=activity;
-//        try {
-//            this.mAdapterCallback = ((AdapterCallback) activity);
-//        } catch (ClassCastException e) {
-//            throw new ClassCastException("Activity must implement AdapterCallback.");
-//        }
     }
 
     @Override
-    public MyViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+    public MyViewHolder onCreateViewHolder(final ViewGroup parent, int viewType) {
         View itemView = LayoutInflater.from(parent.getContext())
                 .inflate(R.layout.routeholder, parent, false);
-
+//        itemView.setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View v) {
+//                RecyclerView recyclerView=(RecyclerView)activity.findViewById(R.id.recycler_view5);
+//                int position=recyclerView.getChildLayoutPosition(v);
+//                Intent intent=new Intent(activity, FareListActivity.class);
+//                Bundle bundle=new Bundle();
+//                bundle.putParcelable("route",routes.get(position));
+//                intent.putExtras(bundle);
+//                activity.startActivity(intent);
+//            }
+//        });
         return new MyViewHolder(itemView);
     }
 
@@ -62,35 +77,19 @@ public class RouteAdapter extends RecyclerView.Adapter<RouteAdapter.MyViewHolder
     @Override
     public void onBindViewHolder(MyViewHolder holder, int position) {
 
-        final Route item=feedItems.get(position);
-
-        int a=item.getDuration();
-        holder.timestamp.setText(String.valueOf(a));
-
-//        // Checking for null feed url
-//        if (item.getUrl() != null) {
-//            holder.url.setText(Html.fromHtml("<a href=\"" + item.getUrl() + "\">"
-//                    + item.getUrl() + "</a> "));
-//
-//            // Making url clickable
-//            holder.url.setMovementMethod(LinkMovementMethod.getInstance());
-//            holder.url.setVisibility(View.VISIBLE);
-//        } else {
-//            // url is null, remove from the view
-//            holder.url.setVisibility(View.GONE);
-//        }
+        final Route item= routes.get(position);
+        System.out.println("no of items "+ routes.size());
+        float a=(float)item.getDuration()/60;
+        holder.duration.setText(a+" mins");
+        holder.fare.setText(""+item.getFare());
+        holder.mode.setText(item.getMode());
+        System.out.println("here "+position);
 
     }
 
     @Override
     public int getItemCount() {
-        return feedItems.size();
+        return routes.size();
     }
-
-
-//    public static interface AdapterCallback {
-//        void onMethodCallback(ArrayList<Step> commentItems);
-//    }
-
 
 }
