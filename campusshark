@@ -1,0 +1,16 @@
+technical architecture
+
+     The android application has a min SDK version of 15. It uses the Android support library, google play services, and a third party sothree slidinguppanel library as its dependencies. It currently uses digital ocean for user authentication and it makes network API calls (google maps and Uber) to fetch the routes and respective transportation mode from the user specified source and destination. We have used three activities to represent the flow of the app- the first is the google map activity with two edittext boxes for entering the source and the destination. On clicking any of the boxes, another activity follows up which creates a dropdown along with the edittext for suggestions. The sliding up panel pops up when both the source and the destination are entered suggesting different routes on the google map as differently coloured polylines. The routes are listed in decreasing order of their cost. On clicking one of the routes, another activity opens up which details the route node to node on a recyclerview and shows distance, mode of transportation, cost and estimated time of each node on each viewholder.
+
+     The present features includes transportation routes wired for Delhi NCR. The mode of transportation available are bus, auto rickshaw, metro and walking. The routes are generally permutations and combinations of these transportation modes, hence the reason for their variable costs.
+
+     Beyond the prototyping stage, the application would want to add additional features to make it more useful. Taking digital ocean as a backend, the application would use the service to introduce transportation pooling in real time. The users therefore will be able to collaborate with other people filtered according to the customer's time and mode of transportation which would ultimately help them save tremendous amount of money. Secondly, the app will include intercity transportation through intercity buses, railway trains and aeroplanes. Goibibo has intercity buses and aeroplane API'S which will help us achieve that. The IRCTC has an API for railways. Thirdly, we plan to integrate payments of various transportation modes through our app. 
+
+
+
+
+    CHALLENGES
+    node wala algo  intercity ke specific nodes  smallest transportation needs.
+
+
+   
